@@ -18,7 +18,7 @@ app = cdk.App()
 # Get environment configuration
 env = cdk.Environment(
     account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
-    region=os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
+    region=os.environ.get("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 # Stack naming prefix
@@ -29,7 +29,7 @@ auth_stack = AuthStack(
     app,
     f"{stack_prefix}-Auth",
     env=env,
-    description="Authentication resources for AI SW Program Manager"
+    description="Authentication resources for AI SW Program Manager",
 )
 
 # VPC and Network Security stack - VPC, security groups, flow logs
@@ -37,7 +37,7 @@ vpc_network_stack = VpcNetworkSecurityStack(
     app,
     f"{stack_prefix}-VPCNetworkSecurity",
     env=env,
-    description="VPC and network security configuration for AI SW Program Manager"
+    description="VPC and network security configuration for AI SW Program Manager",
 )
 
 # Database stack - DynamoDB tables and RDS PostgreSQL
@@ -47,7 +47,7 @@ database_stack = DatabaseStack(
     vpc=vpc_network_stack.vpc,
     rds_security_group=vpc_network_stack.rds_security_group,
     env=env,
-    description="Database resources for AI SW Program Manager"
+    description="Database resources for AI SW Program Manager",
 )
 
 # Storage stack - S3 buckets and OpenSearch domain
@@ -57,7 +57,7 @@ storage_stack = StorageStack(
     vpc=vpc_network_stack.vpc,
     opensearch_security_group=vpc_network_stack.opensearch_security_group,
     env=env,
-    description="Storage resources for AI SW Program Manager"
+    description="Storage resources for AI SW Program Manager",
 )
 
 # Cache stack - ElastiCache Redis for dashboard and report caching
@@ -66,7 +66,7 @@ cache_stack = CacheStack(
     f"{stack_prefix}-Cache",
     vpc=vpc_network_stack.vpc,
     env=env,
-    description="ElastiCache Redis for dashboard and report caching"
+    description="ElastiCache Redis for dashboard and report caching",
 )
 
 # Monitoring stack - CloudWatch log groups and X-Ray
@@ -74,7 +74,7 @@ monitoring_stack = MonitoringStack(
     app,
     f"{stack_prefix}-Monitoring",
     env=env,
-    description="Monitoring and observability resources for AI SW Program Manager"
+    description="Monitoring and observability resources for AI SW Program Manager",
 )
 
 # Audit Logging stack - CloudTrail, log retention, and log aggregation
@@ -83,7 +83,7 @@ audit_logging_stack = AuditLoggingStack(
     f"{stack_prefix}-AuditLogging",
     alarm_topic=monitoring_stack.alarm_topic,
     env=env,
-    description="Comprehensive audit logging with CloudTrail and log aggregation"
+    description="Comprehensive audit logging with CloudTrail and log aggregation",
 )
 
 # Ingestion Workflow stack - Step Functions orchestration
@@ -92,7 +92,7 @@ ingestion_workflow_stack = IngestionWorkflowStack(
     f"{stack_prefix}-IngestionWorkflow",
     integrations_table_name=database_stack.integrations_table.table_name,
     env=env,
-    description="Data ingestion workflow orchestration for AI SW Program Manager"
+    description="Data ingestion workflow orchestration for AI SW Program Manager",
 )
 
 # API Gateway stack - REST API with Lambda integrations
@@ -109,7 +109,7 @@ api_gateway_stack = ApiGatewayStack(
     reports_table=database_stack.reports_table,
     alarm_topic=monitoring_stack.alarm_topic,
     env=env,
-    description="API Gateway and Lambda integrations for AI SW Program Manager"
+    description="API Gateway and Lambda integrations for AI SW Program Manager",
 )
 
 # Add dependencies
@@ -132,7 +132,7 @@ for stack in [
     monitoring_stack,
     audit_logging_stack,
     ingestion_workflow_stack,
-    api_gateway_stack
+    api_gateway_stack,
 ]:
     cdk.Tags.of(stack).add("Project", "AI-SW-Program-Manager")
     cdk.Tags.of(stack).add("ManagedBy", "CDK")

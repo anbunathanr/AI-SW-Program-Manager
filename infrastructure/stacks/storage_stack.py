@@ -22,10 +22,10 @@ class StorageStack(Stack):
         construct_id: str,
         vpc: ec2.IVpc = None,
         opensearch_security_group: ec2.ISecurityGroup = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        
+
         self.vpc = vpc
         self.opensearch_security_group = opensearch_security_group
 
@@ -35,7 +35,7 @@ class StorageStack(Stack):
             "StorageEncryptionKey",
             description="Encryption key for storage resources",
             enable_key_rotation=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create S3 buckets
@@ -61,11 +61,11 @@ class StorageStack(Stack):
             lifecycle_rules=[
                 s3.LifecycleRule(
                     id="DeleteOldVersions",
-                    noncurrent_version_expiration=Duration.days(90)
+                    noncurrent_version_expiration=Duration.days(90),
                 )
             ],
             removal_policy=RemovalPolicy.RETAIN,
-            auto_delete_objects=False
+            auto_delete_objects=False,
         )
 
         # Enable server access logging
@@ -76,13 +76,10 @@ class StorageStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             enforce_ssl=True,
             lifecycle_rules=[
-                s3.LifecycleRule(
-                    id="DeleteOldLogs",
-                    expiration=Duration.days(90)
-                )
+                s3.LifecycleRule(id="DeleteOldLogs", expiration=Duration.days(90))
             ],
             removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True
+            auto_delete_objects=True,
         )
 
         self.documents_bucket.add_lifecycle_rule(
@@ -90,9 +87,9 @@ class StorageStack(Stack):
             transitions=[
                 s3.Transition(
                     storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                    transition_after=Duration.days(30)
+                    transition_after=Duration.days(30),
                 )
-            ]
+            ],
         )
 
         # Reports bucket
@@ -106,22 +103,19 @@ class StorageStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             enforce_ssl=True,
             lifecycle_rules=[
-                s3.LifecycleRule(
-                    id="DeleteOldReports",
-                    expiration=Duration.days(365)
-                ),
+                s3.LifecycleRule(id="DeleteOldReports", expiration=Duration.days(365)),
                 s3.LifecycleRule(
                     id="TransitionToIA",
                     transitions=[
                         s3.Transition(
                             storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                            transition_after=Duration.days(30)
+                            transition_after=Duration.days(30),
                         )
-                    ]
-                )
+                    ],
+                ),
             ],
             removal_policy=RemovalPolicy.RETAIN,
-            auto_delete_objects=False
+            auto_delete_objects=False,
         )
 
         # Model artifacts bucket (for SageMaker)
@@ -135,7 +129,7 @@ class StorageStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             enforce_ssl=True,
             removal_policy=RemovalPolicy.RETAIN,
-            auto_delete_objects=False
+            auto_delete_objects=False,
         )
 
     def _create_opensearch_domain(self) -> None:
@@ -149,32 +143,30 @@ class StorageStack(Stack):
             capacity=opensearch.CapacityConfig(
                 data_node_instance_type="r6g.large.search",
                 data_nodes=2,
-                multi_az_with_standby_enabled=False
+                multi_az_with_standby_enabled=False,
             ),
             ebs=opensearch.EbsOptions(
                 volume_size=100,
                 volume_type=ec2.EbsDeviceVolumeType.GP3,
                 iops=3000,
-                throughput=125
+                throughput=125,
             ),
             zone_awareness=opensearch.ZoneAwarenessConfig(
-                enabled=True,
-                availability_zone_count=2
+                enabled=True, availability_zone_count=2
             ),
             vpc=self.vpc,
-            vpc_subnets=[ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
-            )],
+            vpc_subnets=[
+                ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS)
+            ],
             security_groups=[self.opensearch_security_group],
             encryption_at_rest=opensearch.EncryptionAtRestOptions(
-                enabled=True,
-                kms_key=self.encryption_key
+                enabled=True, kms_key=self.encryption_key
             ),
             node_to_node_encryption=True,
             enforce_https=True,
             tls_security_policy=opensearch.TLSSecurityPolicy.TLS_1_2,
             automated_snapshot_start_hour=2,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Grant access to Lambda functions (will be configured later)
@@ -186,10 +178,8 @@ class StorageStack(Stack):
                     "es:ESHttpGet",
                     "es:ESHttpPut",
                     "es:ESHttpPost",
-                    "es:ESHttpDelete"
+                    "es:ESHttpDelete",
                 ],
-                resources=[
-                    f"{self.opensearch_domain.domain_arn}/*"
-                ]
+                resources=[f"{self.opensearch_domain.domain_arn}/*"],
             )
         )

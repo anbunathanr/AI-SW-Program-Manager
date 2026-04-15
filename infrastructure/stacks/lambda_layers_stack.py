@@ -11,7 +11,7 @@ import os
 class LambdaLayersStack(Stack):
     """
     Stack for Lambda layers containing shared dependencies.
-    
+
     Optimizes cold start times by reducing individual function package sizes.
     Validates: Requirement 23.1, 23.2
     """
@@ -29,7 +29,7 @@ class LambdaLayersStack(Stack):
             ),
             compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
             description="Common Python dependencies (boto3, requests, urllib3)",
-            removal_policy=None
+            removal_policy=None,
         )
 
         # Create data processing layer
@@ -42,7 +42,7 @@ class LambdaLayersStack(Stack):
             ),
             compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
             description="Data processing libraries (pandas, numpy)",
-            removal_policy=None
+            removal_policy=None,
         )
 
         # Create AI/ML layer
@@ -55,6 +55,5 @@ class LambdaLayersStack(Stack):
             ),
             compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
             description="AI/ML libraries for Bedrock and SageMaker",
-            removal_policy=None
+            removal_policy=None,
         )
-

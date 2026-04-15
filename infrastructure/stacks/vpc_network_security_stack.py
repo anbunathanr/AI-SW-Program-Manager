@@ -15,12 +15,7 @@ from constructs import Construct
 class VpcNetworkSecurityStack(Stack):
     """Stack for VPC and network security configuration."""
 
-    def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        **kwargs
-    ) -> None:
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         # Create VPC with private subnets for RDS and OpenSearch
@@ -44,25 +39,23 @@ class VpcNetworkSecurityStack(Stack):
             subnet_configuration=[
                 # Public subnets for NAT Gateway
                 ec2.SubnetConfiguration(
-                    name="Public",
-                    subnet_type=ec2.SubnetType.PUBLIC,
-                    cidr_mask=24
+                    name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
                 ),
                 # Private subnets with egress for Lambda functions
                 ec2.SubnetConfiguration(
                     name="Private",
                     subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                    cidr_mask=24
+                    cidr_mask=24,
                 ),
                 # Isolated subnets for RDS (no internet access)
                 ec2.SubnetConfiguration(
                     name="Isolated",
                     subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
-                    cidr_mask=24
-                )
+                    cidr_mask=24,
+                ),
             ],
             enable_dns_hostnames=True,
-            enable_dns_support=True
+            enable_dns_support=True,
         )
 
         return vpc
@@ -74,7 +67,7 @@ class VpcNetworkSecurityStack(Stack):
             "RDSSecurityGroup",
             vpc=self.vpc,
             description="Security group for RDS PostgreSQL - least privilege access",
-            allow_all_outbound=False
+            allow_all_outbound=False,
         )
 
         # Allow PostgreSQL access only from Lambda security group
@@ -82,7 +75,7 @@ class VpcNetworkSecurityStack(Stack):
         sg.add_ingress_rule(
             peer=ec2.Peer.ipv4(self.vpc.vpc_cidr_block),
             connection=ec2.Port.tcp(5432),
-            description="Allow PostgreSQL from VPC CIDR (will be restricted to Lambda SG)"
+            description="Allow PostgreSQL from VPC CIDR (will be restricted to Lambda SG)",
         )
 
         return sg
@@ -94,14 +87,14 @@ class VpcNetworkSecurityStack(Stack):
             "OpenSearchSecurityGroup",
             vpc=self.vpc,
             description="Security group for OpenSearch - least privilege access",
-            allow_all_outbound=False
+            allow_all_outbound=False,
         )
 
         # Allow HTTPS access only from Lambda security group
         sg.add_ingress_rule(
             peer=ec2.Peer.ipv4(self.vpc.vpc_cidr_block),
             connection=ec2.Port.tcp(443),
-            description="Allow HTTPS from VPC CIDR (will be restricted to Lambda SG)"
+            description="Allow HTTPS from VPC CIDR (will be restricted to Lambda SG)",
         )
 
         return sg
@@ -113,7 +106,7 @@ class VpcNetworkSecurityStack(Stack):
             "LambdaSecurityGroup",
             vpc=self.vpc,
             description="Security group for Lambda functions accessing VPC resources",
-            allow_all_outbound=True  # Lambda needs to access AWS services
+            allow_all_outbound=True,  # Lambda needs to access AWS services
         )
 
         return sg
@@ -126,7 +119,7 @@ class VpcNetworkSecurityStack(Stack):
             "VPCFlowLogsGroup",
             log_group_name="/aws/vpc/flowlogs",
             retention=logs.RetentionDays.ONE_MONTH,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create IAM role for VPC Flow Logs
@@ -134,7 +127,7 @@ class VpcNetworkSecurityStack(Stack):
             self,
             "VPCFlowLogsRole",
             assumed_by=iam.ServicePrincipal("vpc-flow-logs.amazonaws.com"),
-            description="IAM role for VPC Flow Logs to write to CloudWatch"
+            description="IAM role for VPC Flow Logs to write to CloudWatch",
         )
 
         # Grant permissions to write to CloudWatch Logs
@@ -146,9 +139,9 @@ class VpcNetworkSecurityStack(Stack):
                     "logs:CreateLogStream",
                     "logs:PutLogEvents",
                     "logs:DescribeLogGroups",
-                    "logs:DescribeLogStreams"
+                    "logs:DescribeLogStreams",
                 ],
-                resources=[log_group.log_group_arn]
+                resources=[log_group.log_group_arn],
             )
         )
 
@@ -165,54 +158,52 @@ class VpcNetworkSecurityStack(Stack):
                     transitions=[
                         s3.Transition(
                             storage_class=s3.StorageClass.GLACIER,
-                            transition_after=Duration.days(90)
+                            transition_after=Duration.days(90),
                         )
-                    ]
+                    ],
                 ),
-                s3.LifecycleRule(
-                    id="DeleteOldLogs",
-                    expiration=Duration.days(365)
-                )
+                s3.LifecycleRule(id="DeleteOldLogs", expiration=Duration.days(365)),
             ],
             removal_policy=RemovalPolicy.RETAIN,
-            auto_delete_objects=False
+            auto_delete_objects=False,
         )
 
         # Enable VPC Flow Logs to CloudWatch
         self.vpc.add_flow_log(
             "VPCFlowLogsToCloudWatch",
             destination=ec2.FlowLogDestination.to_cloud_watch_logs(
-                log_group=log_group,
-                iam_role=flow_logs_role
+                log_group=log_group, iam_role=flow_logs_role
             ),
-            traffic_type=ec2.FlowLogTrafficType.ALL
+            traffic_type=ec2.FlowLogTrafficType.ALL,
         )
 
         # Enable VPC Flow Logs to S3 for long-term storage
         self.vpc.add_flow_log(
             "VPCFlowLogsToS3",
             destination=ec2.FlowLogDestination.to_s3(
-                bucket=flow_logs_bucket,
-                key_prefix="vpc-flow-logs/"
+                bucket=flow_logs_bucket, key_prefix="vpc-flow-logs/"
             ),
-            traffic_type=ec2.FlowLogTrafficType.ALL
+            traffic_type=ec2.FlowLogTrafficType.ALL,
         )
 
     def configure_rds_security_group_rules(self) -> None:
         """Configure RDS security group to only allow access from Lambda security group."""
         # Remove the broad VPC CIDR rule and add specific Lambda SG rule
         self.rds_security_group.add_ingress_rule(
-            peer=ec2.Peer.security_group_id(self.lambda_security_group.security_group_id),
+            peer=ec2.Peer.security_group_id(
+                self.lambda_security_group.security_group_id
+            ),
             connection=ec2.Port.tcp(5432),
-            description="Allow PostgreSQL from Lambda functions only"
+            description="Allow PostgreSQL from Lambda functions only",
         )
 
     def configure_opensearch_security_group_rules(self) -> None:
         """Configure OpenSearch security group to only allow access from Lambda security group."""
         # Add specific Lambda SG rule
         self.opensearch_security_group.add_ingress_rule(
-            peer=ec2.Peer.security_group_id(self.lambda_security_group.security_group_id),
+            peer=ec2.Peer.security_group_id(
+                self.lambda_security_group.security_group_id
+            ),
             connection=ec2.Port.tcp(443),
-            description="Allow HTTPS from Lambda functions only"
+            description="Allow HTTPS from Lambda functions only",
         )
-

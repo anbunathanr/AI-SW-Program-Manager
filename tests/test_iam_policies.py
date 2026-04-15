@@ -30,7 +30,7 @@ class TestIAMAccessAnalyzer:
     def test_access_analyzer_created(self, template):
         """
         Test that IAM Access Analyzer is created.
-        
+
         Validates: Requirement 24.5 - Enable IAM Access Analyzer
         """
         template.resource_count_is("AWS::AccessAnalyzer::Analyzer", 1)
@@ -39,10 +39,7 @@ class TestIAMAccessAnalyzer:
         """Test that Access Analyzer is account-level."""
         template.has_resource_properties(
             "AWS::AccessAnalyzer::Analyzer",
-            {
-                "Type": "ACCOUNT",
-                "AnalyzerName": "ai-sw-pm-access-analyzer"
-            }
+            {"Type": "ACCOUNT", "AnalyzerName": "ai-sw-pm-access-analyzer"},
         )
 
     def test_access_analyzer_tags(self, template):
@@ -50,11 +47,13 @@ class TestIAMAccessAnalyzer:
         template.has_resource_properties(
             "AWS::AccessAnalyzer::Analyzer",
             {
-                "Tags": Match.array_with([
-                    {"Key": "Application", "Value": "AI-SW-Program-Manager"},
-                    {"Key": "Purpose", "Value": "IAM-Policy-Analysis"}
-                ])
-            }
+                "Tags": Match.array_with(
+                    [
+                        {"Key": "Application", "Value": "AI-SW-Program-Manager"},
+                        {"Key": "Purpose", "Value": "IAM-Policy-Analysis"},
+                    ]
+                )
+            },
         )
 
 
@@ -67,37 +66,47 @@ class TestAuthorizerRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-authorizer-role",
-                "Description": "Least privilege role for Lambda Authorizer function"
-            }
+                "Description": "Least privilege role for Lambda Authorizer function",
+            },
         )
 
     def test_authorizer_cognito_permissions(self, template):
         """
         Test that Authorizer has only required Cognito permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         # Find the authorizer role specifically
         template.has_resource_properties(
             "AWS::IAM::Role",
-            Match.object_like({
-                "RoleName": "ai-sw-pm-authorizer-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "cognito-idp:GetUser",
-                                        "cognito-idp:DescribeUserPool"
-                                    ],
-                                    "Effect": "Allow"
-                                })
-                            ])
-                        }
-                    })
-                ])
-            })
+            Match.object_like(
+                {
+                    "RoleName": "ai-sw-pm-authorizer-role",
+                    "Policies": Match.array_with(
+                        [
+                            Match.object_like(
+                                {
+                                    "PolicyDocument": {
+                                        "Statement": Match.array_with(
+                                            [
+                                                Match.object_like(
+                                                    {
+                                                        "Action": [
+                                                            "cognito-idp:GetUser",
+                                                            "cognito-idp:DescribeUserPool",
+                                                        ],
+                                                        "Effect": "Allow",
+                                                    }
+                                                )
+                                            ]
+                                        )
+                                    }
+                                }
+                            )
+                        ]
+                    ),
+                }
+            ),
         )
 
     def test_authorizer_no_write_permissions(self, template):
@@ -107,21 +116,31 @@ class TestAuthorizerRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-authorizer-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": Match.array_equals([
-                                        "cognito-idp:GetUser",
-                                        "cognito-idp:DescribeUserPool"
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": Match.array_equals(
+                                                        [
+                                                            "cognito-idp:GetUser",
+                                                            "cognito-idp:DescribeUserPool",
+                                                        ]
+                                                    )
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -134,38 +153,46 @@ class TestUserManagementRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-user-management-role",
-                "Description": "Least privilege role for User Management function"
-            }
+                "Description": "Least privilege role for User Management function",
+            },
         )
 
     def test_user_management_cognito_permissions(self, template):
         """
         Test that User Management has required Cognito permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-user-management-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "cognito-idp:AdminCreateUser",
-                                        "cognito-idp:AdminDeleteUser",
-                                        "cognito-idp:AdminUpdateUserAttributes",
-                                        "cognito-idp:ListUsers"
-                                    ],
-                                    "Effect": "Allow"
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "cognito-idp:AdminCreateUser",
+                                                        "cognito-idp:AdminDeleteUser",
+                                                        "cognito-idp:AdminUpdateUserAttributes",
+                                                        "cognito-idp:ListUsers",
+                                                    ],
+                                                    "Effect": "Allow",
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
     def test_user_management_dynamodb_scoped(self, template):
@@ -174,27 +201,39 @@ class TestUserManagementRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-user-management-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "dynamodb:GetItem",
-                                        "dynamodb:PutItem",
-                                        "dynamodb:UpdateItem",
-                                        "dynamodb:Query",
-                                        "dynamodb:Scan"
-                                    ],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*table/ai-sw-pm-users.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "dynamodb:GetItem",
+                                                        "dynamodb:PutItem",
+                                                        "dynamodb:UpdateItem",
+                                                        "dynamodb:Query",
+                                                        "dynamodb:Scan",
+                                                    ],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*table/ai-sw-pm-users.*"
+                                                            )
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -207,40 +246,52 @@ class TestJiraIntegrationRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-jira-integration-role",
-                "Description": "Least privilege role for Jira Integration function"
-            }
+                "Description": "Least privilege role for Jira Integration function",
+            },
         )
 
     def test_jira_secrets_scoped(self, template):
         """
         Test that Secrets Manager permissions are scoped to Jira secrets only.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-jira-integration-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "secretsmanager:CreateSecret",
-                                        "secretsmanager:GetSecretValue",
-                                        "secretsmanager:UpdateSecret",
-                                        "secretsmanager:TagResource"
-                                    ],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*secret:ai-sw-pm/jira/.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "secretsmanager:CreateSecret",
+                                                        "secretsmanager:GetSecretValue",
+                                                        "secretsmanager:UpdateSecret",
+                                                        "secretsmanager:TagResource",
+                                                    ],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*secret:ai-sw-pm/jira/.*"
+                                                            )
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
     def test_jira_delete_secret_condition(self, template):
@@ -249,23 +300,33 @@ class TestJiraIntegrationRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-jira-integration-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": ["secretsmanager:DeleteSecret"],
-                                    "Condition": {
-                                        "StringEquals": {
-                                            "secretsmanager:RecoveryWindowInDays": "7"
-                                        }
-                                    }
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "secretsmanager:DeleteSecret"
+                                                    ],
+                                                    "Condition": {
+                                                        "StringEquals": {
+                                                            "secretsmanager:RecoveryWindowInDays": "7"
+                                                        }
+                                                    },
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -278,8 +339,8 @@ class TestDataIngestionRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-data-ingestion-role",
-                "Description": "Least privilege role for Data Ingestion functions"
-            }
+                "Description": "Least privilege role for Data Ingestion functions",
+            },
         )
 
     def test_data_ingestion_vpc_access(self, template):
@@ -288,10 +349,10 @@ class TestDataIngestionRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-data-ingestion-role",
-                "ManagedPolicyArns": Match.array_with([
-                    Match.string_like_regexp(".*AWSLambdaVPCAccessExecutionRole.*")
-                ])
-            }
+                "ManagedPolicyArns": Match.array_with(
+                    [Match.string_like_regexp(".*AWSLambdaVPCAccessExecutionRole.*")]
+                ),
+            },
         )
 
     def test_data_ingestion_sqs_permissions(self, template):
@@ -300,26 +361,38 @@ class TestDataIngestionRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-data-ingestion-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "sqs:SendMessage",
-                                        "sqs:ReceiveMessage",
-                                        "sqs:DeleteMessage",
-                                        "sqs:GetQueueAttributes"
-                                    ],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*ai-sw-pm-ingestion-queue.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "sqs:SendMessage",
+                                                        "sqs:ReceiveMessage",
+                                                        "sqs:DeleteMessage",
+                                                        "sqs:GetQueueAttributes",
+                                                    ],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*ai-sw-pm-ingestion-queue.*"
+                                                            )
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -332,36 +405,50 @@ class TestRiskDetectionRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-risk-detection-role",
-                "Description": "Least privilege role for Risk Detection function"
-            }
+                "Description": "Least privilege role for Risk Detection function",
+            },
         )
 
     def test_risk_detection_bedrock_permissions(self, template):
         """
         Test that Risk Detection has Bedrock permissions for AI explanations.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-risk-detection-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": ["bedrock:InvokeModel"],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*foundation-model/anthropic.claude-.*"),
-                                        Match.string_like_regexp(".*foundation-model/amazon.titan-.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": ["bedrock:InvokeModel"],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*foundation-model/anthropic.claude-.*"
+                                                            ),
+                                                            Match.string_like_regexp(
+                                                                ".*foundation-model/amazon.titan-.*"
+                                                            ),
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
     def test_risk_detection_rds_read_only(self, template):
@@ -370,19 +457,29 @@ class TestRiskDetectionRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-risk-detection-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": ["rds-data:ExecuteStatement"],
-                                    "Effect": "Allow"
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "rds-data:ExecuteStatement"
+                                                    ],
+                                                    "Effect": "Allow",
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -395,35 +492,49 @@ class TestPredictionRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-prediction-role",
-                "Description": "Least privilege role for Prediction function"
-            }
+                "Description": "Least privilege role for Prediction function",
+            },
         )
 
     def test_prediction_sagemaker_scoped(self, template):
         """
         Test that SageMaker permissions are scoped to platform endpoints.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-prediction-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": ["sagemaker:InvokeEndpoint"],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*endpoint/ai-sw-pm-.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "sagemaker:InvokeEndpoint"
+                                                    ],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*endpoint/ai-sw-pm-.*"
+                                                            )
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -436,25 +547,37 @@ class TestDocumentRoles:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-document-upload-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "s3:PutObject",
-                                        "s3:PutObjectAcl",
-                                        "s3:GetObject"
-                                    ],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*ai-sw-pm-documents-.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "s3:PutObject",
+                                                        "s3:PutObjectAcl",
+                                                        "s3:GetObject",
+                                                    ],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*ai-sw-pm-documents-.*"
+                                                            )
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
     def test_document_intelligence_textract_permissions(self, template):
@@ -463,22 +586,30 @@ class TestDocumentRoles:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-document-intelligence-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "textract:AnalyzeDocument",
-                                        "textract:DetectDocumentText"
-                                    ],
-                                    "Effect": "Allow"
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "textract:AnalyzeDocument",
+                                                        "textract:DetectDocumentText",
+                                                    ],
+                                                    "Effect": "Allow",
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
     def test_semantic_search_opensearch_scoped(self, template):
@@ -487,24 +618,36 @@ class TestDocumentRoles:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-semantic-search-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "es:ESHttpGet",
-                                        "es:ESHttpPost"
-                                    ],
-                                    "Resource": Match.array_with([
-                                        Match.string_like_regexp(".*domain/ai-sw-pm-documents/.*")
-                                    ])
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "es:ESHttpGet",
+                                                        "es:ESHttpPost",
+                                                    ],
+                                                    "Resource": Match.array_with(
+                                                        [
+                                                            Match.string_like_regexp(
+                                                                ".*domain/ai-sw-pm-documents/.*"
+                                                            )
+                                                        ]
+                                                    ),
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -517,40 +660,48 @@ class TestReportGenerationRole:
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-report-generation-role",
-                "Description": "Least privilege role for Report Generation function"
-            }
+                "Description": "Least privilege role for Report Generation function",
+            },
         )
 
     def test_report_generation_ses_restricted(self, template):
         """
         Test that SES permissions have from-address restriction.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-report-generation-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "ses:SendEmail",
-                                        "ses:SendRawEmail"
-                                    ],
-                                    "Condition": {
-                                        "StringLike": {
-                                            "ses:FromAddress": "noreply@*"
-                                        }
-                                    }
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "ses:SendEmail",
+                                                        "ses:SendRawEmail",
+                                                    ],
+                                                    "Condition": {
+                                                        "StringLike": {
+                                                            "ses:FromAddress": "noreply@*"
+                                                        }
+                                                    },
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -560,30 +711,38 @@ class TestDashboardRole:
     def test_dashboard_role_read_only(self, template):
         """
         Test that Dashboard role has only read permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-dashboard-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": [
-                                        "dynamodb:GetItem",
-                                        "dynamodb:Query",
-                                        "dynamodb:Scan"
-                                    ],
-                                    "Effect": "Allow"
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "dynamodb:GetItem",
+                                                        "dynamodb:Query",
+                                                        "dynamodb:Scan",
+                                                    ],
+                                                    "Effect": "Allow",
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -593,30 +752,40 @@ class TestDatabaseMaintenanceRole:
     def test_database_maintenance_cloudwatch_namespace_restricted(self, template):
         """
         Test that CloudWatch metrics are restricted to specific namespace.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         template.has_resource_properties(
             "AWS::IAM::Role",
             {
                 "RoleName": "ai-sw-pm-database-maintenance-role",
-                "Policies": Match.array_with([
-                    Match.object_like({
-                        "PolicyDocument": {
-                            "Statement": Match.array_with([
-                                Match.object_like({
-                                    "Action": ["cloudwatch:PutMetricData"],
-                                    "Condition": {
-                                        "StringEquals": {
-                                            "cloudwatch:namespace": "AI-SW-PM/Database"
-                                        }
-                                    }
-                                })
-                            ])
-                        }
-                    })
-                ])
-            }
+                "Policies": Match.array_with(
+                    [
+                        Match.object_like(
+                            {
+                                "PolicyDocument": {
+                                    "Statement": Match.array_with(
+                                        [
+                                            Match.object_like(
+                                                {
+                                                    "Action": [
+                                                        "cloudwatch:PutMetricData"
+                                                    ],
+                                                    "Condition": {
+                                                        "StringEquals": {
+                                                            "cloudwatch:namespace": "AI-SW-PM/Database"
+                                                        }
+                                                    },
+                                                }
+                                            )
+                                        ]
+                                    )
+                                }
+                            }
+                        )
+                    ]
+                ),
+            },
         )
 
 
@@ -626,7 +795,7 @@ class TestRoleCount:
     def test_all_roles_created(self, template):
         """
         Test that all 13 IAM roles are created.
-        
+
         Validates: Requirement 24.5 - Specific IAM roles for each Lambda function
         """
         # Count IAM roles (should be 13)
@@ -635,7 +804,7 @@ class TestRoleCount:
     def test_no_wildcard_resources(self, iam_stack):
         """
         Test that no policies use wildcard resources except where necessary.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         # This is a conceptual test - in practice, we'd need to inspect

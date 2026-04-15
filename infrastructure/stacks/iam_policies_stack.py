@@ -11,7 +11,7 @@ from constructs import Construct
 class IamPoliciesStack(Stack):
     """
     Stack for centralized IAM policy management with least privilege principles.
-    
+
     Validates: Requirement 24.5 - IAM-based access control for all AWS resources
     """
 
@@ -39,7 +39,7 @@ class IamPoliciesStack(Stack):
     def _create_access_analyzer(self) -> None:
         """
         Create IAM Access Analyzer to continuously monitor IAM policies.
-        
+
         Validates: Requirement 24.5 - Enable IAM Access Analyzer
         """
         self.access_analyzer = accessanalyzer.CfnAnalyzer(
@@ -48,21 +48,15 @@ class IamPoliciesStack(Stack):
             type="ACCOUNT",
             analyzer_name="ai-sw-pm-access-analyzer",
             tags=[
-                {
-                    "key": "Application",
-                    "value": "AI-SW-Program-Manager"
-                },
-                {
-                    "key": "Purpose",
-                    "value": "IAM-Policy-Analysis"
-                }
-            ]
+                {"key": "Application", "value": "AI-SW-Program-Manager"},
+                {"key": "Purpose", "value": "IAM-Policy-Analysis"},
+            ],
         )
 
     def _create_authorizer_role(self) -> iam.Role:
         """
         Create IAM role for Lambda Authorizer with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -75,7 +69,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant only specific Cognito permissions needed for authorization
@@ -83,18 +77,11 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="CognitoReadOnlyAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "cognito-idp:GetUser",
-                    "cognito-idp:DescribeUserPool"
-                ],
+                actions=["cognito-idp:GetUser", "cognito-idp:DescribeUserPool"],
                 resources=[
                     f"arn:aws:cognito-idp:{self.region}:{self.account}:userpool/*"
                 ],
-                conditions={
-                    "StringEquals": {
-                        "aws:RequestedRegion": self.region
-                    }
-                }
+                conditions={"StringEquals": {"aws:RequestedRegion": self.region}},
             )
         )
 
@@ -103,7 +90,7 @@ class IamPoliciesStack(Stack):
     def _create_user_management_role(self) -> iam.Role:
         """
         Create IAM role for User Management Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -116,7 +103,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant specific Cognito user management permissions
@@ -128,11 +115,11 @@ class IamPoliciesStack(Stack):
                     "cognito-idp:AdminCreateUser",
                     "cognito-idp:AdminDeleteUser",
                     "cognito-idp:AdminUpdateUserAttributes",
-                    "cognito-idp:ListUsers"
+                    "cognito-idp:ListUsers",
                 ],
                 resources=[
                     f"arn:aws:cognito-idp:{self.region}:{self.account}:userpool/*"
-                ]
+                ],
             )
         )
 
@@ -146,12 +133,12 @@ class IamPoliciesStack(Stack):
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:Scan",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-users",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-users/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-users/index/*",
+                ],
             )
         )
 
@@ -160,7 +147,7 @@ class IamPoliciesStack(Stack):
     def _create_jira_integration_role(self) -> iam.Role:
         """
         Create IAM role for Jira Integration Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -173,7 +160,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant DynamoDB access for Integrations table only
@@ -185,12 +172,12 @@ class IamPoliciesStack(Stack):
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
-                    "dynamodb:Query"
+                    "dynamodb:Query",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations/index/*",
+                ],
             )
         )
 
@@ -203,11 +190,11 @@ class IamPoliciesStack(Stack):
                     "secretsmanager:CreateSecret",
                     "secretsmanager:GetSecretValue",
                     "secretsmanager:UpdateSecret",
-                    "secretsmanager:TagResource"
+                    "secretsmanager:TagResource",
                 ],
                 resources=[
                     f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:ai-sw-pm/jira/*"
-                ]
+                ],
             )
         )
 
@@ -216,17 +203,13 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="SecretsManagerJiraDelete",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "secretsmanager:DeleteSecret"
-                ],
+                actions=["secretsmanager:DeleteSecret"],
                 resources=[
                     f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:ai-sw-pm/jira/*"
                 ],
                 conditions={
-                    "StringEquals": {
-                        "secretsmanager:RecoveryWindowInDays": "7"
-                    }
-                }
+                    "StringEquals": {"secretsmanager:RecoveryWindowInDays": "7"}
+                },
             )
         )
 
@@ -235,7 +218,7 @@ class IamPoliciesStack(Stack):
     def _create_azure_devops_role(self) -> iam.Role:
         """
         Create IAM role for Azure DevOps Integration Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -248,7 +231,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant DynamoDB access for Integrations table only
@@ -260,12 +243,12 @@ class IamPoliciesStack(Stack):
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
-                    "dynamodb:Query"
+                    "dynamodb:Query",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations/index/*",
+                ],
             )
         )
 
@@ -278,11 +261,11 @@ class IamPoliciesStack(Stack):
                     "secretsmanager:CreateSecret",
                     "secretsmanager:GetSecretValue",
                     "secretsmanager:UpdateSecret",
-                    "secretsmanager:TagResource"
+                    "secretsmanager:TagResource",
                 ],
                 resources=[
                     f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:ai-sw-pm/azure-devops/*"
-                ]
+                ],
             )
         )
 
@@ -291,17 +274,13 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="SecretsManagerAzureDevOpsDelete",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "secretsmanager:DeleteSecret"
-                ],
+                actions=["secretsmanager:DeleteSecret"],
                 resources=[
                     f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:ai-sw-pm/azure-devops/*"
                 ],
                 conditions={
-                    "StringEquals": {
-                        "secretsmanager:RecoveryWindowInDays": "7"
-                    }
-                }
+                    "StringEquals": {"secretsmanager:RecoveryWindowInDays": "7"}
+                },
             )
         )
 
@@ -310,7 +289,7 @@ class IamPoliciesStack(Stack):
     def _create_data_ingestion_role(self) -> iam.Role:
         """
         Create IAM role for Data Ingestion Lambda functions with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -325,8 +304,8 @@ class IamPoliciesStack(Stack):
                 ),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaVPCAccessExecutionRole"
-                )
-            ]
+                ),
+            ],
         )
 
         # Grant DynamoDB access for required tables
@@ -339,14 +318,14 @@ class IamPoliciesStack(Stack):
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:Query",
-                    "dynamodb:BatchWriteItem"
+                    "dynamodb:BatchWriteItem",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-integrations/index/*",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-projects",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-projects/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-projects/index/*",
+                ],
             )
         )
 
@@ -357,11 +336,11 @@ class IamPoliciesStack(Stack):
                 effect=iam.Effect.ALLOW,
                 actions=[
                     "secretsmanager:GetSecretValue",
-                    "secretsmanager:DescribeSecret"
+                    "secretsmanager:DescribeSecret",
                 ],
                 resources=[
                     f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:ai-sw-pm/*"
-                ]
+                ],
             )
         )
 
@@ -370,13 +349,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="RDSDataAPIAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "rds-data:ExecuteStatement",
-                    "rds-data:BatchExecuteStatement"
-                ],
+                actions=["rds-data:ExecuteStatement", "rds-data:BatchExecuteStatement"],
                 resources=[
                     f"arn:aws:rds:{self.region}:{self.account}:cluster:ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -389,11 +365,11 @@ class IamPoliciesStack(Stack):
                     "sqs:SendMessage",
                     "sqs:ReceiveMessage",
                     "sqs:DeleteMessage",
-                    "sqs:GetQueueAttributes"
+                    "sqs:GetQueueAttributes",
                 ],
                 resources=[
                     f"arn:aws:sqs:{self.region}:{self.account}:ai-sw-pm-ingestion-queue"
-                ]
+                ],
             )
         )
 
@@ -402,12 +378,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="StepFunctionsExecution",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "states:StartExecution"
-                ],
+                actions=["states:StartExecution"],
                 resources=[
                     f"arn:aws:states:{self.region}:{self.account}:stateMachine:ai-sw-pm-ingestion-workflow"
-                ]
+                ],
             )
         )
 
@@ -416,7 +390,7 @@ class IamPoliciesStack(Stack):
     def _create_risk_detection_role(self) -> iam.Role:
         """
         Create IAM role for Risk Detection Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -431,8 +405,8 @@ class IamPoliciesStack(Stack):
                 ),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaVPCAccessExecutionRole"
-                )
-            ]
+                ),
+            ],
         )
 
         # Grant DynamoDB access for Risks table
@@ -445,12 +419,12 @@ class IamPoliciesStack(Stack):
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:Scan",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks/index/*",
+                ],
             )
         )
 
@@ -459,12 +433,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="RDSReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "rds-data:ExecuteStatement"
-                ],
+                actions=["rds-data:ExecuteStatement"],
                 resources=[
                     f"arn:aws:rds:{self.region}:{self.account}:cluster:ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -473,13 +445,11 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="BedrockInvokeModel",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel"
-                ],
+                actions=["bedrock:InvokeModel"],
                 resources=[
                     f"arn:aws:bedrock:{self.region}::foundation-model/anthropic.claude-*",
-                    f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-*"
-                ]
+                    f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-*",
+                ],
             )
         )
 
@@ -488,12 +458,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="EventBridgePutEvents",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "events:PutEvents"
-                ],
+                actions=["events:PutEvents"],
                 resources=[
                     f"arn:aws:events:{self.region}:{self.account}:event-bus/default"
-                ]
+                ],
             )
         )
 
@@ -502,7 +470,7 @@ class IamPoliciesStack(Stack):
     def _create_prediction_role(self) -> iam.Role:
         """
         Create IAM role for Prediction Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -517,8 +485,8 @@ class IamPoliciesStack(Stack):
                 ),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaVPCAccessExecutionRole"
-                )
-            ]
+                ),
+            ],
         )
 
         # Grant DynamoDB access for Predictions and Risks tables
@@ -531,14 +499,14 @@ class IamPoliciesStack(Stack):
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:Scan",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions/index/*",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks/index/*",
+                ],
             )
         )
 
@@ -547,12 +515,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="RDSReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "rds-data:ExecuteStatement"
-                ],
+                actions=["rds-data:ExecuteStatement"],
                 resources=[
                     f"arn:aws:rds:{self.region}:{self.account}:cluster:ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -561,12 +527,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="SageMakerInvokeEndpoint",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "sagemaker:InvokeEndpoint"
-                ],
+                actions=["sagemaker:InvokeEndpoint"],
                 resources=[
                     f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -575,7 +539,7 @@ class IamPoliciesStack(Stack):
     def _create_document_upload_role(self) -> iam.Role:
         """
         Create IAM role for Document Upload Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -588,7 +552,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant S3 access for document uploads (tenant-specific prefixes)
@@ -596,14 +560,8 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="S3DocumentUploadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "s3:PutObject",
-                    "s3:PutObjectAcl",
-                    "s3:GetObject"
-                ],
-                resources=[
-                    f"arn:aws:s3:::ai-sw-pm-documents-{self.account}/*"
-                ]
+                actions=["s3:PutObject", "s3:PutObjectAcl", "s3:GetObject"],
+                resources=[f"arn:aws:s3:::ai-sw-pm-documents-{self.account}/*"],
             )
         )
 
@@ -612,14 +570,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="DynamoDBDocumentsTableAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "dynamodb:PutItem",
-                    "dynamodb:GetItem",
-                    "dynamodb:UpdateItem"
-                ],
+                actions=["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-documents"
-                ]
+                ],
             )
         )
 
@@ -628,7 +582,7 @@ class IamPoliciesStack(Stack):
     def _create_document_intelligence_role(self) -> iam.Role:
         """
         Create IAM role for Document Intelligence Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -641,7 +595,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant S3 read access for documents
@@ -649,12 +603,8 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="S3DocumentReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "s3:GetObject"
-                ],
-                resources=[
-                    f"arn:aws:s3:::ai-sw-pm-documents-{self.account}/*"
-                ]
+                actions=["s3:GetObject"],
+                resources=[f"arn:aws:s3:::ai-sw-pm-documents-{self.account}/*"],
             )
         )
 
@@ -663,11 +613,8 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="TextractDocumentAnalysis",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "textract:AnalyzeDocument",
-                    "textract:DetectDocumentText"
-                ],
-                resources=["*"]  # Textract doesn't support resource-level permissions
+                actions=["textract:AnalyzeDocument", "textract:DetectDocumentText"],
+                resources=["*"],  # Textract doesn't support resource-level permissions
             )
         )
 
@@ -676,13 +623,11 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="BedrockInvokeModel",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel"
-                ],
+                actions=["bedrock:InvokeModel"],
                 resources=[
                     f"arn:aws:bedrock:{self.region}::foundation-model/anthropic.claude-*",
-                    f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-*"
-                ]
+                    f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-*",
+                ],
             )
         )
 
@@ -695,12 +640,12 @@ class IamPoliciesStack(Stack):
                     "dynamodb:PutItem",
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem",
-                    "dynamodb:Query"
+                    "dynamodb:Query",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-document-extractions",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-document-extractions/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-document-extractions/index/*",
+                ],
             )
         )
 
@@ -709,14 +654,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="SQSDocumentProcessingAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "sqs:SendMessage",
-                    "sqs:ReceiveMessage",
-                    "sqs:DeleteMessage"
-                ],
+                actions=["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage"],
                 resources=[
                     f"arn:aws:sqs:{self.region}:{self.account}:ai-sw-pm-document-processing-queue"
-                ]
+                ],
             )
         )
 
@@ -725,7 +666,7 @@ class IamPoliciesStack(Stack):
     def _create_semantic_search_role(self) -> iam.Role:
         """
         Create IAM role for Semantic Search Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -738,7 +679,7 @@ class IamPoliciesStack(Stack):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         # Grant OpenSearch access for vector search
@@ -746,13 +687,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="OpenSearchAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "es:ESHttpGet",
-                    "es:ESHttpPost"
-                ],
+                actions=["es:ESHttpGet", "es:ESHttpPost"],
                 resources=[
                     f"arn:aws:es:{self.region}:{self.account}:domain/ai-sw-pm-documents/*"
-                ]
+                ],
             )
         )
 
@@ -761,12 +699,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="BedrockEmbeddings",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel"
-                ],
+                actions=["bedrock:InvokeModel"],
                 resources=[
                     f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-embed-*"
-                ]
+                ],
             )
         )
 
@@ -775,7 +711,7 @@ class IamPoliciesStack(Stack):
     def _create_report_generation_role(self) -> iam.Role:
         """
         Create IAM role for Report Generation Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -790,8 +726,8 @@ class IamPoliciesStack(Stack):
                 ),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaVPCAccessExecutionRole"
-                )
-            ]
+                ),
+            ],
         )
 
         # Grant DynamoDB access for Reports table
@@ -803,12 +739,12 @@ class IamPoliciesStack(Stack):
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
-                    "dynamodb:Query"
+                    "dynamodb:Query",
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-reports",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-reports/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-reports/index/*",
+                ],
             )
         )
 
@@ -817,17 +753,13 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="DynamoDBReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "dynamodb:GetItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan"
-                ],
+                actions=["dynamodb:GetItem", "dynamodb:Query", "dynamodb:Scan"],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks/index/*",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions/index/*",
+                ],
             )
         )
 
@@ -836,12 +768,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="RDSReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "rds-data:ExecuteStatement"
-                ],
+                actions=["rds-data:ExecuteStatement"],
                 resources=[
                     f"arn:aws:rds:{self.region}:{self.account}:cluster:ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -850,12 +780,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="BedrockInvokeModel",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel"
-                ],
+                actions=["bedrock:InvokeModel"],
                 resources=[
                     f"arn:aws:bedrock:{self.region}::foundation-model/anthropic.claude-*"
-                ]
+                ],
             )
         )
 
@@ -864,13 +792,8 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="S3ReportStorageAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "s3:PutObject",
-                    "s3:GetObject"
-                ],
-                resources=[
-                    f"arn:aws:s3:::ai-sw-pm-reports-{self.account}/*"
-                ]
+                actions=["s3:PutObject", "s3:GetObject"],
+                resources=[f"arn:aws:s3:::ai-sw-pm-reports-{self.account}/*"],
             )
         )
 
@@ -879,18 +802,9 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="SESEmailSending",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "ses:SendEmail",
-                    "ses:SendRawEmail"
-                ],
-                resources=[
-                    f"arn:aws:ses:{self.region}:{self.account}:identity/*"
-                ],
-                conditions={
-                    "StringLike": {
-                        "ses:FromAddress": "noreply@*"
-                    }
-                }
+                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                resources=[f"arn:aws:ses:{self.region}:{self.account}:identity/*"],
+                conditions={"StringLike": {"ses:FromAddress": "noreply@*"}},
             )
         )
 
@@ -899,7 +813,7 @@ class IamPoliciesStack(Stack):
     def _create_dashboard_role(self) -> iam.Role:
         """
         Create IAM role for Dashboard Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -914,8 +828,8 @@ class IamPoliciesStack(Stack):
                 ),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaVPCAccessExecutionRole"
-                )
-            ]
+                ),
+            ],
         )
 
         # Grant DynamoDB read access for dashboard data
@@ -923,19 +837,15 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="DynamoDBReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "dynamodb:GetItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan"
-                ],
+                actions=["dynamodb:GetItem", "dynamodb:Query", "dynamodb:Scan"],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-risks/index/*",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-predictions/index/*",
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-projects",
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-projects/index/*"
-                ]
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/ai-sw-pm-projects/index/*",
+                ],
             )
         )
 
@@ -944,12 +854,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="RDSReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "rds-data:ExecuteStatement"
-                ],
+                actions=["rds-data:ExecuteStatement"],
                 resources=[
                     f"arn:aws:rds:{self.region}:{self.account}:cluster:ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -960,12 +868,12 @@ class IamPoliciesStack(Stack):
                 effect=iam.Effect.ALLOW,
                 actions=[
                     "elasticache:DescribeCacheClusters",
-                    "elasticache:DescribeReplicationGroups"
+                    "elasticache:DescribeReplicationGroups",
                 ],
                 resources=[
                     f"arn:aws:elasticache:{self.region}:{self.account}:cluster:ai-sw-pm-*",
-                    f"arn:aws:elasticache:{self.region}:{self.account}:replicationgroup:ai-sw-pm-*"
-                ]
+                    f"arn:aws:elasticache:{self.region}:{self.account}:replicationgroup:ai-sw-pm-*",
+                ],
             )
         )
 
@@ -974,7 +882,7 @@ class IamPoliciesStack(Stack):
     def _create_database_maintenance_role(self) -> iam.Role:
         """
         Create IAM role for Database Maintenance Lambda with minimum required permissions.
-        
+
         Validates: Requirement 24.5 - Least privilege IAM policies
         """
         role = iam.Role(
@@ -989,8 +897,8 @@ class IamPoliciesStack(Stack):
                 ),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaVPCAccessExecutionRole"
-                )
-            ]
+                ),
+            ],
         )
 
         # Grant RDS maintenance permissions
@@ -998,13 +906,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="RDSMaintenanceAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "rds-data:ExecuteStatement",
-                    "rds-data:BatchExecuteStatement"
-                ],
+                actions=["rds-data:ExecuteStatement", "rds-data:BatchExecuteStatement"],
                 resources=[
                     f"arn:aws:rds:{self.region}:{self.account}:cluster:ai-sw-pm-*"
-                ]
+                ],
             )
         )
 
@@ -1013,12 +918,10 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="SecretsManagerReadAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "secretsmanager:GetSecretValue"
-                ],
+                actions=["secretsmanager:GetSecretValue"],
                 resources=[
                     f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:ai-sw-pm/rds/*"
-                ]
+                ],
             )
         )
 
@@ -1027,15 +930,11 @@ class IamPoliciesStack(Stack):
             iam.PolicyStatement(
                 sid="CloudWatchPutMetrics",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "cloudwatch:PutMetricData"
-                ],
+                actions=["cloudwatch:PutMetricData"],
                 resources=["*"],
                 conditions={
-                    "StringEquals": {
-                        "cloudwatch:namespace": "AI-SW-PM/Database"
-                    }
-                }
+                    "StringEquals": {"cloudwatch:namespace": "AI-SW-PM/Database"}
+                },
             )
         )
 

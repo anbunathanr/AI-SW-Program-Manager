@@ -22,7 +22,7 @@ from constructs import Construct
 class AuditLoggingStack(Stack):
     """
     Stack for comprehensive audit logging with CloudTrail, log retention, and aggregation.
-    
+
     Implements:
     - CloudTrail for all API calls (Requirement 28.1)
     - Log retention policies (90 days CloudWatch, 1 year audit logs) (Requirements 27.6, 28.5)
@@ -33,11 +33,7 @@ class AuditLoggingStack(Stack):
     """
 
     def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        alarm_topic: sns.Topic,
-        **kwargs
+        self, scope: Construct, construct_id: str, alarm_topic: sns.Topic, **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -80,10 +76,7 @@ class AuditLoggingStack(Stack):
             iam.PolicyStatement(
                 sid="Allow CloudTrail to encrypt logs",
                 principals=[iam.ServicePrincipal("cloudtrail.amazonaws.com")],
-                actions=[
-                    "kms:GenerateDataKey*",
-                    "kms:DecryptDataKey"
-                ],
+                actions=["kms:GenerateDataKey*", "kms:DecryptDataKey"],
                 resources=["*"],
                 conditions={
                     "StringLike": {
@@ -91,7 +84,7 @@ class AuditLoggingStack(Stack):
                             f"arn:aws:cloudtrail:*:{self.account}:trail/*"
                         ]
                     }
-                }
+                },
             )
         )
 
@@ -99,16 +92,14 @@ class AuditLoggingStack(Stack):
         self.audit_kms_key.add_to_resource_policy(
             iam.PolicyStatement(
                 sid="Allow CloudWatch Logs to use the key",
-                principals=[
-                    iam.ServicePrincipal(f"logs.{self.region}.amazonaws.com")
-                ],
+                principals=[iam.ServicePrincipal(f"logs.{self.region}.amazonaws.com")],
                 actions=[
                     "kms:Encrypt",
                     "kms:Decrypt",
                     "kms:ReEncrypt*",
                     "kms:GenerateDataKey*",
                     "kms:CreateGrant",
-                    "kms:DescribeKey"
+                    "kms:DescribeKey",
                 ],
                 resources=["*"],
                 conditions={
@@ -117,7 +108,7 @@ class AuditLoggingStack(Stack):
                             f"arn:aws:logs:{self.region}:{self.account}:log-group:*"
                         ]
                     }
-                }
+                },
             )
         )
 
@@ -138,19 +129,19 @@ class AuditLoggingStack(Stack):
                     transitions=[
                         s3.Transition(
                             storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                            transition_after=Duration.days(90)
+                            transition_after=Duration.days(90),
                         ),
                         s3.Transition(
                             storage_class=s3.StorageClass.GLACIER,
-                            transition_after=Duration.days(180)
-                        )
-                    ]
+                            transition_after=Duration.days(180),
+                        ),
+                    ],
                 ),
                 s3.LifecycleRule(
                     id="RetainAuditLogs",
                     expiration=Duration.days(365),  # 1 year retention for audit logs
-                    abort_incomplete_multipart_upload_after=Duration.days(7)
-                )
+                    abort_incomplete_multipart_upload_after=Duration.days(7),
+                ),
             ],
             removal_policy=RemovalPolicy.RETAIN,
             enforce_ssl=True,
@@ -163,7 +154,7 @@ class AuditLoggingStack(Stack):
                 sid="AWSCloudTrailAclCheck",
                 principals=[iam.ServicePrincipal("cloudtrail.amazonaws.com")],
                 actions=["s3:GetBucketAcl"],
-                resources=[self.cloudtrail_bucket.bucket_arn]
+                resources=[self.cloudtrail_bucket.bucket_arn],
             )
         )
 
@@ -174,10 +165,8 @@ class AuditLoggingStack(Stack):
                 actions=["s3:PutObject"],
                 resources=[f"{self.cloudtrail_bucket.bucket_arn}/*"],
                 conditions={
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
+                    "StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}
+                },
             )
         )
 
@@ -191,7 +180,7 @@ class AuditLoggingStack(Stack):
             log_group_name="/aws/cloudtrail/ai-sw-pm",
             retention=logs.RetentionDays.ONE_YEAR,  # 1 year retention for audit logs
             encryption_key=self.audit_kms_key,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create IAM role for CloudTrail to write to CloudWatch Logs
@@ -199,7 +188,7 @@ class AuditLoggingStack(Stack):
             self,
             "CloudTrailRole",
             assumed_by=iam.ServicePrincipal("cloudtrail.amazonaws.com"),
-            description="Role for CloudTrail to write to CloudWatch Logs"
+            description="Role for CloudTrail to write to CloudWatch Logs",
         )
 
         self.cloudtrail_log_group.grant_write(cloudtrail_role)
@@ -242,7 +231,7 @@ class AuditLoggingStack(Stack):
                     "/aws/lambda/ai-sw-pm-*",
                     "/aws/apigateway/ai-sw-pm",
                     "/aws/states/ai-sw-pm",
-                ]
+                ],
             },
             # Audit logs - 1 year
             "audit_logs": {
@@ -251,8 +240,8 @@ class AuditLoggingStack(Stack):
                     "/aws/cloudtrail/ai-sw-pm",
                     "/aws/lambda/audit-logging",
                     "/aws/lambda/security-monitoring",
-                ]
-            }
+                ],
+            },
         }
 
         # Create log groups with appropriate retention
@@ -265,7 +254,7 @@ class AuditLoggingStack(Stack):
             log_group_name="/aws/lambda/audit-logging",
             retention=logs.RetentionDays.ONE_YEAR,
             encryption_key=self.audit_kms_key,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Security monitoring Lambda log group
@@ -275,7 +264,7 @@ class AuditLoggingStack(Stack):
             log_group_name="/aws/lambda/security-monitoring",
             retention=logs.RetentionDays.ONE_YEAR,
             encryption_key=self.audit_kms_key,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
     def _create_log_aggregation(self) -> None:
@@ -288,7 +277,7 @@ class AuditLoggingStack(Stack):
             log_group_name="/aws/audit/aggregated",
             retention=logs.RetentionDays.ONE_YEAR,
             encryption_key=self.audit_kms_key,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create metric filters for audit events
@@ -307,12 +296,14 @@ class AuditLoggingStack(Stack):
             log_group=self.cloudtrail_log_group,
             filter_pattern=logs.FilterPattern.all(
                 logs.FilterPattern.string_value("$.eventName", "=", "ConsoleLogin"),
-                logs.FilterPattern.string_value("$.errorCode", "=", "Failed authentication")
+                logs.FilterPattern.string_value(
+                    "$.errorCode", "=", "Failed authentication"
+                ),
             ),
             metric_namespace="AISWProgramManager/Audit",
             metric_name="AuthenticationFailures",
             metric_value="1",
-            default_value=0
+            default_value=0,
         )
 
         # Unauthorized access attempts metric
@@ -322,12 +313,14 @@ class AuditLoggingStack(Stack):
             log_group=self.cloudtrail_log_group,
             filter_pattern=logs.FilterPattern.any(
                 logs.FilterPattern.string_value("$.errorCode", "=", "AccessDenied"),
-                logs.FilterPattern.string_value("$.errorCode", "=", "UnauthorizedOperation")
+                logs.FilterPattern.string_value(
+                    "$.errorCode", "=", "UnauthorizedOperation"
+                ),
             ),
             metric_namespace="AISWProgramManager/Audit",
             metric_name="UnauthorizedAccessAttempts",
             metric_value="1",
-            default_value=0
+            default_value=0,
         )
 
         # Data modification events metric
@@ -341,7 +334,7 @@ class AuditLoggingStack(Stack):
             metric_namespace="AISWProgramManager/Audit",
             metric_name="DataModifications",
             metric_value="1",
-            default_value=0
+            default_value=0,
         )
 
         # Administrative action metric
@@ -355,7 +348,7 @@ class AuditLoggingStack(Stack):
             metric_namespace="AISWProgramManager/Audit",
             metric_name="AdministrativeActions",
             metric_value="1",
-            default_value=0
+            default_value=0,
         )
 
     def _create_insights_queries(self) -> None:
@@ -369,40 +362,35 @@ class AuditLoggingStack(Stack):
                 | sort @timestamp desc
                 | limit 100
             """,
-            
             "failed_authentications": """
                 fields @timestamp, userIdentity.principalId, eventName, errorCode, sourceIPAddress
                 | filter eventName = "ConsoleLogin" and errorCode = "Failed authentication"
                 | stats count() by userIdentity.principalId, sourceIPAddress
                 | sort count desc
             """,
-            
             "data_modifications_by_user": """
                 fields @timestamp, user_id, tenant_id, operation_type, table_name
                 | filter event_type = "data_modification"
                 | stats count() by user_id, operation_type
                 | sort count desc
             """,
-            
             "administrative_actions": """
                 fields @timestamp, admin_user_id, action_type, affected_entity
                 | filter event_type = "administrative_action"
                 | sort @timestamp desc
                 | limit 100
             """,
-            
             "cross_tenant_access_attempts": """
                 fields @timestamp, user_id, user_tenant_id, requested_tenant_id, resource
                 | filter event_type = "security_violation"
                 | sort @timestamp desc
             """,
-            
             "suspicious_activity_patterns": """
                 fields @timestamp, user_id, sourceIPAddress, eventName
                 | stats count() by user_id, sourceIPAddress, bin(5m)
                 | filter count > 100
                 | sort @timestamp desc
-            """
+            """,
         }
 
     def _create_security_monitoring(self) -> None:
@@ -420,17 +408,15 @@ class AuditLoggingStack(Stack):
                 namespace="AISWProgramManager/Audit",
                 metric_name="AuthenticationFailures",
                 statistic="Sum",
-                period=Duration.minutes(5)
+                period=Duration.minutes(5),
             ),
             threshold=10,  # More than 10 failures in 5 minutes
             evaluation_periods=1,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
-        auth_failure_alarm.add_alarm_action(
-            cw_actions.SnsAction(self.alarm_topic)
-        )
+        auth_failure_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))
 
         # Unauthorized access alarm
         unauthorized_access_alarm = cloudwatch.Alarm(
@@ -442,12 +428,12 @@ class AuditLoggingStack(Stack):
                 namespace="AISWProgramManager/Audit",
                 metric_name="UnauthorizedAccessAttempts",
                 statistic="Sum",
-                period=Duration.minutes(5)
+                period=Duration.minutes(5),
             ),
             threshold=5,  # More than 5 unauthorized attempts in 5 minutes
             evaluation_periods=1,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
         unauthorized_access_alarm.add_alarm_action(
@@ -464,17 +450,15 @@ class AuditLoggingStack(Stack):
                 namespace="AISWProgramManager/Audit",
                 metric_name="DataModifications",
                 statistic="Sum",
-                period=Duration.minutes(5)
+                period=Duration.minutes(5),
             ),
             threshold=1000,  # More than 1000 modifications in 5 minutes
             evaluation_periods=1,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
-        data_mod_alarm.add_alarm_action(
-            cw_actions.SnsAction(self.alarm_topic)
-        )
+        data_mod_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))
 
     def _create_audit_export(self) -> None:
         """Create infrastructure for audit log export for compliance reporting."""
@@ -504,7 +488,7 @@ class AuditLoggingStack(Stack):
             "AuditExportBucketName",
             value=self.audit_export_bucket.bucket_name,
             description="S3 bucket for audit log exports",
-            export_name="AuditExportBucketName"
+            export_name="AuditExportBucketName",
         )
 
         # Output CloudTrail log group for export
@@ -513,7 +497,7 @@ class AuditLoggingStack(Stack):
             "CloudTrailLogGroupName",
             value=self.cloudtrail_log_group.log_group_name,
             description="CloudWatch log group for CloudTrail logs",
-            export_name="CloudTrailLogGroupName"
+            export_name="CloudTrailLogGroupName",
         )
 
         # Output aggregated audit log group
@@ -522,5 +506,5 @@ class AuditLoggingStack(Stack):
             "AggregatedAuditLogGroupName",
             value=self.aggregated_audit_log_group.log_group_name,
             description="CloudWatch log group for aggregated audit logs",
-            export_name="AggregatedAuditLogGroupName"
+            export_name="AggregatedAuditLogGroupName",
         )

@@ -14,10 +14,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
-from ..lambda_optimization_config import (
-    PROVISIONED_CONCURRENCY_CONFIG,
-    MEMORY_CONFIG
-)
+from ..lambda_optimization_config import PROVISIONED_CONCURRENCY_CONFIG, MEMORY_CONFIG
 
 
 class ApiGatewayStack(Stack):
@@ -37,7 +34,7 @@ class ApiGatewayStack(Stack):
         reports_table,
         alarm_topic: sns.Topic,
         lambda_layers=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -89,7 +86,7 @@ class ApiGatewayStack(Stack):
             "APIGatewayLogGroup",
             log_group_name="/aws/apigateway/ai-sw-pm-api",
             retention=logs.RetentionDays.THREE_MONTHS,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create REST API
@@ -107,9 +104,9 @@ class ApiGatewayStack(Stack):
                     "X-Amz-Date",
                     "Authorization",
                     "X-Api-Key",
-                    "X-Amz-Security-Token"
+                    "X-Amz-Security-Token",
                 ],
-                allow_credentials=True
+                allow_credentials=True,
             ),
             # CloudWatch logging
             cloud_watch_role=True,
@@ -129,15 +126,15 @@ class ApiGatewayStack(Stack):
                     resource_path=True,
                     response_length=True,
                     status=True,
-                    user=True
+                    user=True,
                 ),
                 # Enable X-Ray tracing
                 tracing_enabled=True,
                 # Metrics
-                metrics_enabled=True
+                metrics_enabled=True,
             ),
             # Request validation
-            endpoint_types=[apigw.EndpointType.REGIONAL]
+            endpoint_types=[apigw.EndpointType.REGIONAL],
         )
 
         # Create usage plan for rate limiting per tenant
@@ -147,18 +144,16 @@ class ApiGatewayStack(Stack):
             description="Usage plan with rate limiting per tenant",
             throttle=apigw.ThrottleSettings(
                 rate_limit=100,  # Requests per second per tenant
-                burst_limit=200  # Burst capacity per tenant
+                burst_limit=200,  # Burst capacity per tenant
             ),
             quota=apigw.QuotaSettings(
                 limit=1000000,  # 1M requests per month per tenant
-                period=apigw.Period.MONTH
-            )
+                period=apigw.Period.MONTH,
+            ),
         )
 
         # Associate usage plan with API stage
-        self.usage_plan.add_api_stage(
-            stage=self.api.deployment_stage
-        )
+        self.usage_plan.add_api_stage(stage=self.api.deployment_stage)
 
     def _create_authorizer(self) -> None:
         """Create Lambda Authorizer for API Gateway."""
@@ -169,55 +164,56 @@ class ApiGatewayStack(Stack):
             handler=self.authorizer_function,
             identity_sources=[apigw.IdentitySource.header("Authorization")],
             results_cache_ttl=Duration.minutes(5),
-            authorizer_name="ai-sw-pm-authorizer"
+            authorizer_name="ai-sw-pm-authorizer",
         )
 
     def _get_lambda_config(self, function_type: str) -> dict:
         """
         Get optimized Lambda configuration for a function type.
-        
+
         Validates: Requirements 23.1, 23.2, 23.4
         """
         for config_type, config in MEMORY_CONFIG.items():
             if function_type in config["functions"]:
                 return {
                     "memory_size": config["memory_size"],
-                    "timeout": config["timeout"]
+                    "timeout": config["timeout"],
                 }
         # Default configuration
-        return {
-            "memory_size": 512,
-            "timeout": Duration.seconds(30)
-        }
+        return {"memory_size": 512, "timeout": Duration.seconds(30)}
 
     def _get_lambda_layers(self, function_type: str) -> list:
         """
         Get appropriate Lambda layers for a function type.
-        
+
         Validates: Requirement 23.2 (reduce package size)
         """
         layers = []
-        
+
         # All functions get common layer
         if "common" in self.lambda_layers:
             layers.append(self.lambda_layers["common"])
-        
+
         # Add data processing layer for specific functions
         if function_type in ["risk_detection", "prediction", "report_generation"]:
             if "data_processing" in self.lambda_layers:
                 layers.append(self.lambda_layers["data_processing"])
-        
+
         # Add AI/ML layer for AI-powered functions
-        if function_type in ["document_intelligence", "report_generation", "risk_detection"]:
+        if function_type in [
+            "document_intelligence",
+            "report_generation",
+            "risk_detection",
+        ]:
             if "ai_ml" in self.lambda_layers:
                 layers.append(self.lambda_layers["ai_ml"])
-        
+
         return layers
 
     def _create_lambda_functions(self) -> None:
         """
         Create Lambda functions for API endpoints with optimized settings.
-        
+
         Validates: Requirements 23.1, 23.2, 23.4
         """
 
@@ -247,7 +243,7 @@ class ApiGatewayStack(Stack):
             memory_size=user_mgmt_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="User management operations",
-            layers=self._get_lambda_layers("user_management")
+            layers=self._get_lambda_layers("user_management"),
         )
 
         # Grant permissions
@@ -258,9 +254,9 @@ class ApiGatewayStack(Stack):
                     "cognito-idp:AdminCreateUser",
                     "cognito-idp:AdminDeleteUser",
                     "cognito-idp:AdminUpdateUserAttributes",
-                    "cognito-idp:ListUsers"
+                    "cognito-idp:ListUsers",
                 ],
-                resources=[self.user_pool.user_pool_arn]
+                resources=[self.user_pool.user_pool_arn],
             )
         )
 
@@ -280,7 +276,7 @@ class ApiGatewayStack(Stack):
             memory_size=jira_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Jira integration configuration",
-            layers=self._get_lambda_layers("jira_integration")
+            layers=self._get_lambda_layers("jira_integration"),
         )
 
         self.integrations_table.grant_read_write_data(self.jira_integration_function)
@@ -290,9 +286,9 @@ class ApiGatewayStack(Stack):
                     "secretsmanager:CreateSecret",
                     "secretsmanager:DeleteSecret",
                     "secretsmanager:GetSecretValue",
-                    "secretsmanager:TagResource"
+                    "secretsmanager:TagResource",
                 ],
-                resources=["*"]
+                resources=["*"],
             )
         )
 
@@ -305,14 +301,16 @@ class ApiGatewayStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             handler="handler.lambda_handler",
             code=lambda_.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "../../src/azure_devops_integration")
+                os.path.join(
+                    os.path.dirname(__file__), "../../src/azure_devops_integration"
+                )
             ),
             environment=common_env,
             timeout=azure_config["timeout"],
             memory_size=azure_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Azure DevOps integration",
-            layers=self._get_lambda_layers("azure_devops")
+            layers=self._get_lambda_layers("azure_devops"),
         )
 
         self.integrations_table.grant_read_write_data(self.azure_devops_function)
@@ -321,9 +319,9 @@ class ApiGatewayStack(Stack):
                 actions=[
                     "secretsmanager:CreateSecret",
                     "secretsmanager:DeleteSecret",
-                    "secretsmanager:GetSecretValue"
+                    "secretsmanager:GetSecretValue",
                 ],
-                resources=["*"]
+                resources=["*"],
             )
         )
 
@@ -343,7 +341,7 @@ class ApiGatewayStack(Stack):
             memory_size=risk_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Risk detection and listing",
-            layers=self._get_lambda_layers("risk_detection")
+            layers=self._get_lambda_layers("risk_detection"),
         )
 
         self.risks_table.grant_read_write_data(self.risk_detection_function)
@@ -364,16 +362,13 @@ class ApiGatewayStack(Stack):
             memory_size=prediction_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="ML-based predictions",
-            layers=self._get_lambda_layers("prediction")
+            layers=self._get_lambda_layers("prediction"),
         )
 
         self.predictions_table.grant_read_write_data(self.prediction_function)
         self.risks_table.grant_read_write_data(self.prediction_function)
         self.prediction_function.add_to_role_policy(
-            iam.PolicyStatement(
-                actions=["sagemaker:InvokeEndpoint"],
-                resources=["*"]
-            )
+            iam.PolicyStatement(actions=["sagemaker:InvokeEndpoint"], resources=["*"])
         )
 
         # Document Upload Lambda - optimized for standard workload
@@ -392,13 +387,13 @@ class ApiGatewayStack(Stack):
             memory_size=doc_upload_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Document upload pre-signed URL generation",
-            layers=self._get_lambda_layers("document_upload")
+            layers=self._get_lambda_layers("document_upload"),
         )
 
         self.document_upload_function.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["s3:PutObject", "s3:GetObject"],
-                resources=["arn:aws:s3:::ai-sw-pm-documents-*/*"]
+                resources=["arn:aws:s3:::ai-sw-pm-documents-*/*"],
             )
         )
 
@@ -411,14 +406,16 @@ class ApiGatewayStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             handler="handler.lambda_handler",
             code=lambda_.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "../../src/document_intelligence")
+                os.path.join(
+                    os.path.dirname(__file__), "../../src/document_intelligence"
+                )
             ),
             environment=common_env,
             timeout=doc_intel_config["timeout"],
             memory_size=doc_intel_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Document intelligence and extraction",
-            layers=self._get_lambda_layers("document_intelligence")
+            layers=self._get_lambda_layers("document_intelligence"),
         )
 
         self.document_intelligence_function.add_to_role_policy(
@@ -426,9 +423,9 @@ class ApiGatewayStack(Stack):
                 actions=[
                     "bedrock:InvokeModel",
                     "textract:AnalyzeDocument",
-                    "textract:DetectDocumentText"
+                    "textract:DetectDocumentText",
                 ],
-                resources=["*"]
+                resources=["*"],
             )
         )
 
@@ -448,13 +445,12 @@ class ApiGatewayStack(Stack):
             memory_size=search_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Semantic document search",
-            layers=self._get_lambda_layers("semantic_search")
+            layers=self._get_lambda_layers("semantic_search"),
         )
 
         self.semantic_search_function.add_to_role_policy(
             iam.PolicyStatement(
-                actions=["es:ESHttpPost", "es:ESHttpGet"],
-                resources=["*"]
+                actions=["es:ESHttpPost", "es:ESHttpGet"], resources=["*"]
             )
         )
 
@@ -474,18 +470,14 @@ class ApiGatewayStack(Stack):
             memory_size=report_config["memory_size"],
             tracing=lambda_.Tracing.ACTIVE,
             description="Report generation",
-            layers=self._get_lambda_layers("report_generation")
+            layers=self._get_lambda_layers("report_generation"),
         )
 
         self.reports_table.grant_read_write_data(self.report_generation_function)
         self.report_generation_function.add_to_role_policy(
             iam.PolicyStatement(
-                actions=[
-                    "bedrock:InvokeModel",
-                    "s3:PutObject",
-                    "s3:GetObject"
-                ],
-                resources=["*"]
+                actions=["bedrock:InvokeModel", "s3:PutObject", "s3:GetObject"],
+                resources=["*"],
             )
         )
 
@@ -505,7 +497,7 @@ class ApiGatewayStack(Stack):
             memory_size=1024,  # Higher memory for faster aggregation
             tracing=lambda_.Tracing.ACTIVE,
             description="Dashboard data aggregation",
-            layers=self._get_lambda_layers("dashboard")
+            layers=self._get_lambda_layers("dashboard"),
         )
 
         self.risks_table.grant_read_data(self.dashboard_function)
@@ -514,7 +506,7 @@ class ApiGatewayStack(Stack):
     def _configure_provisioned_concurrency(self) -> None:
         """
         Configure provisioned concurrency for critical Lambda functions.
-        
+
         Reduces cold start latency for high-traffic functions.
         Validates: Requirements 23.1, 23.6
         """
@@ -522,22 +514,28 @@ class ApiGatewayStack(Stack):
         if "authorizer" in PROVISIONED_CONCURRENCY_CONFIG:
             authorizer_alias = self.authorizer_function.current_version.add_alias(
                 "prod",
-                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["authorizer"]
+                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG[
+                    "authorizer"
+                ],
             )
             # Note: API Gateway authorizer should reference the alias for provisioned concurrency benefits
-        
+
         # Configure provisioned concurrency for dashboard function
         if "dashboard" in PROVISIONED_CONCURRENCY_CONFIG:
             dashboard_alias = self.dashboard_function.current_version.add_alias(
                 "prod",
-                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["dashboard"]
+                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG[
+                    "dashboard"
+                ],
             )
-        
+
         # Configure provisioned concurrency for user management function
         if "user_management" in PROVISIONED_CONCURRENCY_CONFIG:
             user_mgmt_alias = self.user_management_function.current_version.add_alias(
                 "prod",
-                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["user_management"]
+                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG[
+                    "user_management"
+                ],
             )
 
     def _create_user_management_endpoints(self) -> None:
@@ -552,7 +550,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.user_management_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("CreateUserValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "CreateUserValidator", validate_body=True
+            ),
         )
 
         # GET /users - List users
@@ -560,10 +560,10 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.user_management_function,
-                request_templates={"application/json": '{"handler": "list_users"}'}
+                request_templates={"application/json": '{"handler": "list_users"}'},
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # /users/{userId} resource
@@ -575,11 +575,15 @@ class ApiGatewayStack(Stack):
             "PUT",
             apigw.LambdaIntegration(
                 self.user_management_function,
-                request_templates={"application/json": '{"handler": "update_user_role"}'}
+                request_templates={
+                    "application/json": '{"handler": "update_user_role"}'
+                },
             ),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("UpdateRoleValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "UpdateRoleValidator", validate_body=True
+            ),
         )
 
     def _create_integration_endpoints(self) -> None:
@@ -598,7 +602,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.jira_integration_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("ConfigureJiraValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "ConfigureJiraValidator", validate_body=True
+            ),
         )
 
         # /integrations/azure-devops resource
@@ -611,7 +617,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.azure_devops_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("ConfigureAzureValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "ConfigureAzureValidator", validate_body=True
+            ),
         )
 
     def _create_risk_detection_endpoints(self) -> None:
@@ -625,7 +633,7 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(self.risk_detection_function),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # /risks/{riskId} resource
@@ -637,11 +645,15 @@ class ApiGatewayStack(Stack):
             "PUT",
             apigw.LambdaIntegration(
                 self.risk_detection_function,
-                request_templates={"application/json": '{"handler": "dismiss_risk_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "dismiss_risk_handler"}'
+                },
             ),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("DismissRiskValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "DismissRiskValidator", validate_body=True
+            ),
         )
 
     def _create_prediction_endpoints(self) -> None:
@@ -657,7 +669,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.prediction_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("PredictDelayValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "PredictDelayValidator", validate_body=True
+            ),
         )
 
         # POST /predictions/workload-imbalance
@@ -666,11 +680,15 @@ class ApiGatewayStack(Stack):
             "POST",
             apigw.LambdaIntegration(
                 self.prediction_function,
-                request_templates={"application/json": '{"handler": "predict_workload_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "predict_workload_handler"}'
+                },
             ),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("PredictWorkloadValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "PredictWorkloadValidator", validate_body=True
+            ),
         )
 
         # GET /predictions/history
@@ -679,10 +697,12 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.prediction_function,
-                request_templates={"application/json": '{"handler": "get_prediction_history_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "get_prediction_history_handler"}'
+                },
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
     def _create_document_endpoints(self) -> None:
@@ -698,7 +718,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.document_upload_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("UploadDocumentValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "UploadDocumentValidator", validate_body=True
+            ),
         )
 
         # /documents/{documentId} resource
@@ -710,7 +732,7 @@ class ApiGatewayStack(Stack):
             "POST",
             apigw.LambdaIntegration(self.document_intelligence_function),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # GET /documents/{documentId}/extractions
@@ -719,10 +741,12 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.document_intelligence_function,
-                request_templates={"application/json": '{"handler": "get_extractions"}'}
+                request_templates={
+                    "application/json": '{"handler": "get_extractions"}'
+                },
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # POST /documents/search
@@ -732,7 +756,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.semantic_search_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("SearchDocumentsValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "SearchDocumentsValidator", validate_body=True
+            ),
         )
 
     def _create_report_endpoints(self) -> None:
@@ -748,7 +774,9 @@ class ApiGatewayStack(Stack):
             apigw.LambdaIntegration(self.report_generation_function),
             authorizer=self.authorizer,
             authorization_type=apigw.AuthorizationType.CUSTOM,
-            request_validator=self._create_request_validator("GenerateReportValidator", validate_body=True)
+            request_validator=self._create_request_validator(
+                "GenerateReportValidator", validate_body=True
+            ),
         )
 
         # GET /reports/{reportId}
@@ -757,10 +785,12 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.report_generation_function,
-                request_templates={"application/json": '{"handler": "get_report_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "get_report_handler"}'
+                },
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # GET /reports - List reports
@@ -768,10 +798,12 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.report_generation_function,
-                request_templates={"application/json": '{"handler": "list_reports_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "list_reports_handler"}'
+                },
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
     def _create_dashboard_endpoints(self) -> None:
@@ -786,7 +818,7 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(self.dashboard_function),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # GET /dashboard/project/{projectId}
@@ -796,10 +828,12 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.dashboard_function,
-                request_templates={"application/json": '{"handler": "get_project_dashboard_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "get_project_dashboard_handler"}'
+                },
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
         # GET /dashboard/metrics/{projectId}
@@ -809,13 +843,20 @@ class ApiGatewayStack(Stack):
             "GET",
             apigw.LambdaIntegration(
                 self.dashboard_function,
-                request_templates={"application/json": '{"handler": "get_metrics_handler"}'}
+                request_templates={
+                    "application/json": '{"handler": "get_metrics_handler"}'
+                },
             ),
             authorizer=self.authorizer,
-            authorization_type=apigw.AuthorizationType.CUSTOM
+            authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
-    def _create_request_validator(self, validator_id: str, validate_body: bool = False, validate_params: bool = False) -> apigw.RequestValidator:
+    def _create_request_validator(
+        self,
+        validator_id: str,
+        validate_body: bool = False,
+        validate_params: bool = False,
+    ) -> apigw.RequestValidator:
         """Create request validator for API Gateway."""
 
         return apigw.RequestValidator(
@@ -823,7 +864,7 @@ class ApiGatewayStack(Stack):
             validator_id,
             rest_api=self.api,
             validate_request_body=validate_body,
-            validate_request_parameters=validate_params
+            validate_request_parameters=validate_params,
         )
 
     def _create_alarms(self) -> None:
@@ -836,13 +877,12 @@ class ApiGatewayStack(Stack):
             alarm_name="ai-sw-pm-api-5xx-errors",
             alarm_description="Alert when API 5XX error rate exceeds 5%",
             metric=self.api.metric_server_error(
-                statistic="Sum",
-                period=Duration.minutes(5)
+                statistic="Sum", period=Duration.minutes(5)
             ),
             threshold=5,
             evaluation_periods=2,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
         api_5xx_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))
@@ -854,13 +894,12 @@ class ApiGatewayStack(Stack):
             alarm_name="ai-sw-pm-api-latency",
             alarm_description="Alert when API latency exceeds 2 seconds",
             metric=self.api.metric_latency(
-                statistic="Average",
-                period=Duration.minutes(5)
+                statistic="Average", period=Duration.minutes(5)
             ),
             threshold=2000,  # milliseconds
             evaluation_periods=2,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
         api_latency_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))
@@ -873,7 +912,7 @@ class ApiGatewayStack(Stack):
             ("prediction", self.prediction_function),
             ("document-upload", self.document_upload_function),
             ("report-generation", self.report_generation_function),
-            ("dashboard", self.dashboard_function)
+            ("dashboard", self.dashboard_function),
         ]:
             throttle_alarm = cloudwatch.Alarm(
                 self,
@@ -881,13 +920,12 @@ class ApiGatewayStack(Stack):
                 alarm_name=f"ai-sw-pm-{function_name}-throttles",
                 alarm_description=f"Alert when {function_name} Lambda is throttled",
                 metric=function.metric_throttles(
-                    statistic="Sum",
-                    period=Duration.minutes(5)
+                    statistic="Sum", period=Duration.minutes(5)
                 ),
                 threshold=1,
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-                treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+                treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
             )
 
             throttle_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))

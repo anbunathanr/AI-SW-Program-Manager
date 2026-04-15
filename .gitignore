@@ -41,6 +41,13 @@ infrastructure/cdk.out/
 infrastructure/node_modules/
 infrastructure/package-lock.json
 
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/package-lock.json
+frontend/yarn.lock
+
 # Environment variables
 .env
 .env.local

@@ -25,7 +25,7 @@ class DatabaseStack(Stack):
         **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        
+
         self.vpc = vpc
         self.rds_security_group = rds_security_group
 
@@ -35,7 +35,7 @@ class DatabaseStack(Stack):
             "DatabaseEncryptionKey",
             description="Encryption key for database resources",
             enable_key_rotation=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create DynamoDB tables
@@ -54,31 +54,25 @@ class DatabaseStack(Stack):
             "UsersTable",
             table_name="ai-sw-pm-users",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # GSI for email lookup
         self.users_table.add_global_secondary_index(
             index_name="EmailIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI1PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI1PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI1SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI1SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # Risks table
@@ -87,45 +81,37 @@ class DatabaseStack(Stack):
             "RisksTable",
             table_name="ai-sw-pm-risks",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
             stream=dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # GSI for project-specific queries
         self.risks_table.add_global_secondary_index(
             index_name="ProjectIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI1PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI1PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI1SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI1SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # GSI for severity filtering
         self.risks_table.add_global_secondary_index(
             index_name="SeverityIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI2PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI2PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI2SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI2SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # Predictions table
@@ -134,31 +120,25 @@ class DatabaseStack(Stack):
             "PredictionsTable",
             table_name="ai-sw-pm-predictions",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # GSI for project and type queries
         self.predictions_table.add_global_secondary_index(
             index_name="ProjectTypeIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI1PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI1PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI1SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI1SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # Documents table
@@ -167,31 +147,25 @@ class DatabaseStack(Stack):
             "DocumentsTable",
             table_name="ai-sw-pm-documents",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # GSI for project queries
         self.documents_table.add_global_secondary_index(
             index_name="ProjectIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI1PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI1PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI1SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI1SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # Document Extractions table
@@ -200,18 +174,14 @@ class DatabaseStack(Stack):
             "DocumentExtractionsTable",
             table_name="ai-sw-pm-document-extractions",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Reports table
@@ -220,31 +190,25 @@ class DatabaseStack(Stack):
             "ReportsTable",
             table_name="ai-sw-pm-reports",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # GSI for report type queries
         self.reports_table.add_global_secondary_index(
             index_name="ReportTypeIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI1PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI1PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI1SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI1SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # Report Schedules table
@@ -253,18 +217,14 @@ class DatabaseStack(Stack):
             "ReportSchedulesTable",
             table_name="ai-sw-pm-report-schedules",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Integrations table
@@ -273,18 +233,14 @@ class DatabaseStack(Stack):
             "IntegrationsTable",
             table_name="ai-sw-pm-integrations",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Email Delivery Logs table
@@ -293,31 +249,25 @@ class DatabaseStack(Stack):
             "EmailDeliveryLogsTable",
             table_name="ai-sw-pm-email-delivery-logs",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # GSI for recipient queries
         self.email_delivery_logs_table.add_global_secondary_index(
             index_name="RecipientIndex",
             partition_key=dynamodb.Attribute(
-                name="GSI1PK",
-                type=dynamodb.AttributeType.STRING
+                name="GSI1PK", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(
-                name="GSI1SK",
-                type=dynamodb.AttributeType.STRING
-            )
+                name="GSI1SK", type=dynamodb.AttributeType.STRING
+            ),
         )
 
         # Email Preferences table
@@ -326,18 +276,14 @@ class DatabaseStack(Stack):
             "EmailPreferencesTable",
             table_name="ai-sw-pm-email-preferences",
             partition_key=dynamodb.Attribute(
-                name="PK",
-                type=dynamodb.AttributeType.STRING
+                name="PK", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="SK",
-                type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             encryption=dynamodb.TableEncryption.CUSTOMER_MANAGED,
             encryption_key=self.encryption_key,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
     def _create_rds_database(self) -> None:
@@ -352,8 +298,8 @@ class DatabaseStack(Stack):
                 secret_string_template='{"username": "postgres"}',
                 generate_string_key="password",
                 exclude_punctuation=True,
-                password_length=32
-            )
+                password_length=32,
+            ),
         )
 
         # Create RDS PostgreSQL instance in isolated subnet with provided security group
@@ -364,8 +310,7 @@ class DatabaseStack(Stack):
                 version=rds.PostgresEngineVersion.VER_15_4
             ),
             instance_type=ec2.InstanceType.of(
-                ec2.InstanceClass.BURSTABLE3,
-                ec2.InstanceSize.MEDIUM
+                ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MEDIUM
             ),
             vpc=self.vpc,
             vpc_subnets=ec2.SubnetSelection(
@@ -381,5 +326,5 @@ class DatabaseStack(Stack):
             multi_az=True,
             backup_retention=Duration.days(7),
             deletion_protection=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )

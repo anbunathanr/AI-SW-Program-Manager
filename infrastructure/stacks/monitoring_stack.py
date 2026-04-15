@@ -38,7 +38,7 @@ class MonitoringStack(Stack):
             self,
             "AlarmTopic",
             display_name="AI SW Program Manager Alarms",
-            topic_name="ai-sw-pm-alarms"
+            topic_name="ai-sw-pm-alarms",
         )
 
         # Add email subscription (will be configured via console or CLI)
@@ -58,7 +58,7 @@ class MonitoringStack(Stack):
             "prediction",
             "document-intelligence",
             "report-generation",
-            "dashboard"
+            "dashboard",
         ]
 
         self.log_groups = {}
@@ -69,7 +69,7 @@ class MonitoringStack(Stack):
                 f"{service.title().replace('-', '')}LogGroup",
                 log_group_name=f"/aws/lambda/ai-sw-pm-{service}",
                 retention=logs.RetentionDays.THREE_MONTHS,
-                removal_policy=RemovalPolicy.RETAIN
+                removal_policy=RemovalPolicy.RETAIN,
             )
             self.log_groups[service] = log_group
 
@@ -79,7 +79,7 @@ class MonitoringStack(Stack):
             "APIGatewayLogGroup",
             log_group_name="/aws/apigateway/ai-sw-pm",
             retention=logs.RetentionDays.THREE_MONTHS,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Step Functions log group
@@ -88,7 +88,7 @@ class MonitoringStack(Stack):
             "StepFunctionsLogGroup",
             log_group_name="/aws/states/ai-sw-pm",
             retention=logs.RetentionDays.THREE_MONTHS,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
     def _create_alarms(self) -> None:
@@ -107,17 +107,15 @@ class MonitoringStack(Stack):
                 namespace="AWS/ApiGateway",
                 metric_name="5XXError",
                 statistic="Sum",
-                period=Duration.minutes(5)
+                period=Duration.minutes(5),
             ),
             threshold=5,
             evaluation_periods=2,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
-        self.api_error_alarm.add_alarm_action(
-            cw_actions.SnsAction(self.alarm_topic)
-        )
+        self.api_error_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))
 
         # API Gateway latency alarm
         self.api_latency_alarm = cloudwatch.Alarm(
@@ -129,21 +127,19 @@ class MonitoringStack(Stack):
                 namespace="AWS/ApiGateway",
                 metric_name="Latency",
                 statistic="Average",
-                period=Duration.minutes(5)
+                period=Duration.minutes(5),
             ),
             threshold=2000,  # milliseconds
             evaluation_periods=2,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
-        self.api_latency_alarm.add_alarm_action(
-            cw_actions.SnsAction(self.alarm_topic)
-        )
+        self.api_latency_alarm.add_alarm_action(cw_actions.SnsAction(self.alarm_topic))
 
     def _create_dashboard(self) -> None:
         """Create CloudWatch dashboards for monitoring."""
-        
+
         # Create three separate dashboards as per requirements
         self._create_api_metrics_dashboard()
         self._create_business_metrics_dashboard()
@@ -151,11 +147,9 @@ class MonitoringStack(Stack):
 
     def _create_api_metrics_dashboard(self) -> None:
         """Create dashboard for API metrics (latency, error rate, throughput)."""
-        
+
         self.api_dashboard = cloudwatch.Dashboard(
-            self,
-            "APIDashboard",
-            dashboard_name="ai-sw-pm-api-metrics"
+            self, "APIDashboard", dashboard_name="ai-sw-pm-api-metrics"
         )
 
         # Row 1: Throughput metrics
@@ -168,11 +162,11 @@ class MonitoringStack(Stack):
                         metric_name="Count",
                         statistic="Sum",
                         period=Duration.minutes(5),
-                        label="Total Requests"
+                        label="Total Requests",
                     )
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="Requests (Last 5 min)",
@@ -181,11 +175,11 @@ class MonitoringStack(Stack):
                         namespace="AWS/ApiGateway",
                         metric_name="Count",
                         statistic="Sum",
-                        period=Duration.minutes(5)
+                        period=Duration.minutes(5),
                     )
                 ],
                 width=6,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="Requests Per Second",
@@ -197,15 +191,15 @@ class MonitoringStack(Stack):
                                 namespace="AWS/ApiGateway",
                                 metric_name="Count",
                                 statistic="Sum",
-                                period=Duration.minutes(5)
+                                period=Duration.minutes(5),
                             )
                         },
-                        label="RPS"
+                        label="RPS",
                     )
                 ],
                 width=6,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 2: Error rate metrics
@@ -219,7 +213,7 @@ class MonitoringStack(Stack):
                         statistic="Sum",
                         period=Duration.minutes(5),
                         label="4XX Errors",
-                        color="#FF9900"
+                        color="#FF9900",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/ApiGateway",
@@ -227,11 +221,11 @@ class MonitoringStack(Stack):
                         statistic="Sum",
                         period=Duration.minutes(5),
                         label="5XX Errors",
-                        color="#D13212"
-                    )
+                        color="#D13212",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Error Rate Percentage",
@@ -243,27 +237,27 @@ class MonitoringStack(Stack):
                                 namespace="AWS/ApiGateway",
                                 metric_name="4XXError",
                                 statistic="Sum",
-                                period=Duration.minutes(5)
+                                period=Duration.minutes(5),
                             ),
                             "m2": cloudwatch.Metric(
                                 namespace="AWS/ApiGateway",
                                 metric_name="5XXError",
                                 statistic="Sum",
-                                period=Duration.minutes(5)
+                                period=Duration.minutes(5),
                             ),
                             "m3": cloudwatch.Metric(
                                 namespace="AWS/ApiGateway",
                                 metric_name="Count",
                                 statistic="Sum",
-                                period=Duration.minutes(5)
-                            )
+                                period=Duration.minutes(5),
+                            ),
                         },
-                        label="Error Rate %"
+                        label="Error Rate %",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 3: Latency metrics
@@ -277,7 +271,7 @@ class MonitoringStack(Stack):
                         statistic="Average",
                         period=Duration.minutes(5),
                         label="Average",
-                        color="#1F77B4"
+                        color="#1F77B4",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/ApiGateway",
@@ -285,7 +279,7 @@ class MonitoringStack(Stack):
                         statistic="p50",
                         period=Duration.minutes(5),
                         label="P50",
-                        color="#2CA02C"
+                        color="#2CA02C",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/ApiGateway",
@@ -293,7 +287,7 @@ class MonitoringStack(Stack):
                         statistic="p90",
                         period=Duration.minutes(5),
                         label="P90",
-                        color="#FF7F0E"
+                        color="#FF7F0E",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/ApiGateway",
@@ -301,11 +295,11 @@ class MonitoringStack(Stack):
                         statistic="p99",
                         period=Duration.minutes(5),
                         label="P99",
-                        color="#D62728"
-                    )
+                        color="#D62728",
+                    ),
                 ],
                 width=18,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="Current P99 Latency (ms)",
@@ -314,12 +308,12 @@ class MonitoringStack(Stack):
                         namespace="AWS/ApiGateway",
                         metric_name="Latency",
                         statistic="p99",
-                        period=Duration.minutes(5)
+                        period=Duration.minutes(5),
                     )
                 ],
                 width=6,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 4: Integration latency
@@ -332,28 +326,26 @@ class MonitoringStack(Stack):
                         metric_name="IntegrationLatency",
                         statistic="Average",
                         period=Duration.minutes(5),
-                        label="Average"
+                        label="Average",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/ApiGateway",
                         metric_name="IntegrationLatency",
                         statistic="p99",
                         period=Duration.minutes(5),
-                        label="P99"
-                    )
+                        label="P99",
+                    ),
                 ],
                 width=24,
-                height=6
+                height=6,
             )
         )
 
     def _create_business_metrics_dashboard(self) -> None:
         """Create dashboard for business metrics (ingestion success rate, prediction accuracy)."""
-        
+
         self.business_dashboard = cloudwatch.Dashboard(
-            self,
-            "BusinessDashboard",
-            dashboard_name="ai-sw-pm-business-metrics"
+            self, "BusinessDashboard", dashboard_name="ai-sw-pm-business-metrics"
         )
 
         # Row 1: Data ingestion metrics
@@ -367,7 +359,7 @@ class MonitoringStack(Stack):
                         statistic="Sum",
                         period=Duration.hours(1),
                         label="Successful Ingestions",
-                        color="#2CA02C"
+                        color="#2CA02C",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
@@ -375,11 +367,11 @@ class MonitoringStack(Stack):
                         statistic="Sum",
                         period=Duration.hours(1),
                         label="Failed Ingestions",
-                        color="#D62728"
-                    )
+                        color="#D62728",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Ingestion Success Rate %",
@@ -391,21 +383,21 @@ class MonitoringStack(Stack):
                                 namespace="AISWProgramManager",
                                 metric_name="IngestionSuccess",
                                 statistic="Sum",
-                                period=Duration.hours(1)
+                                period=Duration.hours(1),
                             ),
                             "m2": cloudwatch.Metric(
                                 namespace="AISWProgramManager",
                                 metric_name="IngestionFailure",
                                 statistic="Sum",
-                                period=Duration.hours(1)
-                            )
+                                period=Duration.hours(1),
+                            ),
                         },
-                        label="Success Rate %"
+                        label="Success Rate %",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 2: Ingestion volume and duration
@@ -418,11 +410,11 @@ class MonitoringStack(Stack):
                         metric_name="RecordsIngested",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Total Records"
+                        label="Total Records",
                     )
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Ingestion Duration (seconds)",
@@ -432,19 +424,19 @@ class MonitoringStack(Stack):
                         metric_name="IngestionDuration",
                         statistic="Average",
                         period=Duration.hours(1),
-                        label="Average Duration"
+                        label="Average Duration",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
                         metric_name="IngestionDuration",
                         statistic="Maximum",
                         period=Duration.hours(1),
-                        label="Max Duration"
-                    )
+                        label="Max Duration",
+                    ),
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 3: Prediction accuracy metrics
@@ -458,7 +450,7 @@ class MonitoringStack(Stack):
                         statistic="Average",
                         period=Duration.days(1),
                         label="Delay Prediction Accuracy %",
-                        color="#1F77B4"
+                        color="#1F77B4",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
@@ -466,11 +458,11 @@ class MonitoringStack(Stack):
                         statistic="Average",
                         period=Duration.days(1),
                         label="Workload Prediction Accuracy %",
-                        color="#FF7F0E"
-                    )
+                        color="#FF7F0E",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Prediction Confidence Scores",
@@ -480,12 +472,12 @@ class MonitoringStack(Stack):
                         metric_name="PredictionConfidence",
                         statistic="Average",
                         period=Duration.hours(1),
-                        label="Average Confidence"
+                        label="Average Confidence",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 4: Risk detection metrics
@@ -500,7 +492,7 @@ class MonitoringStack(Stack):
                         period=Duration.hours(1),
                         dimensions_map={"Severity": "CRITICAL"},
                         label="Critical",
-                        color="#D13212"
+                        color="#D13212",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
@@ -509,7 +501,7 @@ class MonitoringStack(Stack):
                         period=Duration.hours(1),
                         dimensions_map={"Severity": "HIGH"},
                         label="High",
-                        color="#FF9900"
+                        color="#FF9900",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
@@ -518,7 +510,7 @@ class MonitoringStack(Stack):
                         period=Duration.hours(1),
                         dimensions_map={"Severity": "MEDIUM"},
                         label="Medium",
-                        color="#FFD700"
+                        color="#FFD700",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
@@ -527,11 +519,11 @@ class MonitoringStack(Stack):
                         period=Duration.hours(1),
                         dimensions_map={"Severity": "LOW"},
                         label="Low",
-                        color="#1F77B4"
-                    )
+                        color="#1F77B4",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Document Processing Success Rate",
@@ -543,21 +535,21 @@ class MonitoringStack(Stack):
                                 namespace="AISWProgramManager",
                                 metric_name="DocumentProcessingSuccess",
                                 statistic="Sum",
-                                period=Duration.hours(1)
+                                period=Duration.hours(1),
                             ),
                             "m2": cloudwatch.Metric(
                                 namespace="AISWProgramManager",
                                 metric_name="DocumentProcessingFailure",
                                 statistic="Sum",
-                                period=Duration.hours(1)
-                            )
+                                period=Duration.hours(1),
+                            ),
                         },
-                        label="Success Rate %"
+                        label="Success Rate %",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 5: Report generation metrics
@@ -571,7 +563,7 @@ class MonitoringStack(Stack):
                         statistic="Sum",
                         period=Duration.hours(1),
                         dimensions_map={"ReportType": "WEEKLY_STATUS"},
-                        label="Weekly Status"
+                        label="Weekly Status",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
@@ -579,11 +571,11 @@ class MonitoringStack(Stack):
                         statistic="Sum",
                         period=Duration.hours(1),
                         dimensions_map={"ReportType": "EXECUTIVE_SUMMARY"},
-                        label="Executive Summary"
-                    )
+                        label="Executive Summary",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Report Generation Duration (seconds)",
@@ -593,28 +585,26 @@ class MonitoringStack(Stack):
                         metric_name="ReportGenerationDuration",
                         statistic="Average",
                         period=Duration.hours(1),
-                        label="Average"
+                        label="Average",
                     ),
                     cloudwatch.Metric(
                         namespace="AISWProgramManager",
                         metric_name="ReportGenerationDuration",
                         statistic="p99",
                         period=Duration.hours(1),
-                        label="P99"
-                    )
+                        label="P99",
+                    ),
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
     def _create_cost_metrics_dashboard(self) -> None:
         """Create dashboard for cost metrics (Lambda invocations, data transfer)."""
-        
+
         self.cost_dashboard = cloudwatch.Dashboard(
-            self,
-            "CostDashboard",
-            dashboard_name="ai-sw-pm-cost-metrics"
+            self, "CostDashboard", dashboard_name="ai-sw-pm-cost-metrics"
         )
 
         # Row 1: Lambda invocation costs
@@ -627,11 +617,11 @@ class MonitoringStack(Stack):
                         metric_name="Invocations",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Total Invocations"
+                        label="Total Invocations",
                     )
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="Lambda Invocations (Last Hour)",
@@ -640,11 +630,11 @@ class MonitoringStack(Stack):
                         namespace="AWS/Lambda",
                         metric_name="Invocations",
                         statistic="Sum",
-                        period=Duration.hours(1)
+                        period=Duration.hours(1),
                     )
                 ],
                 width=6,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="Lambda Invocations (Last 24h)",
@@ -653,12 +643,12 @@ class MonitoringStack(Stack):
                         namespace="AWS/Lambda",
                         metric_name="Invocations",
                         statistic="Sum",
-                        period=Duration.days(1)
+                        period=Duration.days(1),
                     )
                 ],
                 width=6,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 2: Lambda duration (compute time = cost)
@@ -671,18 +661,18 @@ class MonitoringStack(Stack):
                         metric_name="Duration",
                         statistic="Average",
                         period=Duration.hours(1),
-                        label="Average Duration (ms)"
+                        label="Average Duration (ms)",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/Lambda",
                         metric_name="Duration",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Total Duration (ms)"
-                    )
+                        label="Total Duration (ms)",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="Lambda Concurrent Executions",
@@ -692,12 +682,12 @@ class MonitoringStack(Stack):
                         metric_name="ConcurrentExecutions",
                         statistic="Maximum",
                         period=Duration.minutes(5),
-                        label="Max Concurrent"
+                        label="Max Concurrent",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 3: Data transfer costs
@@ -710,11 +700,11 @@ class MonitoringStack(Stack):
                         metric_name="DataProcessed",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Data Processed"
+                        label="Data Processed",
                     )
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="S3 Data Transfer",
@@ -724,19 +714,19 @@ class MonitoringStack(Stack):
                         metric_name="BytesDownloaded",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Bytes Downloaded"
+                        label="Bytes Downloaded",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/S3",
                         metric_name="BytesUploaded",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Bytes Uploaded"
-                    )
+                        label="Bytes Uploaded",
+                    ),
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 4: DynamoDB costs
@@ -749,18 +739,18 @@ class MonitoringStack(Stack):
                         metric_name="ConsumedReadCapacityUnits",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Read Units"
+                        label="Read Units",
                     ),
                     cloudwatch.Metric(
                         namespace="AWS/DynamoDB",
                         metric_name="ConsumedWriteCapacityUnits",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Write Units"
-                    )
+                        label="Write Units",
+                    ),
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="DynamoDB Throttled Requests",
@@ -770,12 +760,12 @@ class MonitoringStack(Stack):
                         metric_name="UserErrors",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Throttled Requests"
+                        label="Throttled Requests",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 5: AI/ML service costs
@@ -788,11 +778,11 @@ class MonitoringStack(Stack):
                         metric_name="BedrockInvocations",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Total Invocations"
+                        label="Total Invocations",
                     )
                 ],
                 width=12,
-                height=6
+                height=6,
             ),
             cloudwatch.GraphWidget(
                 title="SageMaker Endpoint Invocations",
@@ -802,12 +792,12 @@ class MonitoringStack(Stack):
                         metric_name="ModelInvocations",
                         statistic="Sum",
                         period=Duration.hours(1),
-                        label="Model Invocations"
+                        label="Model Invocations",
                     )
                 ],
                 width=12,
-                height=6
-            )
+                height=6,
+            ),
         )
 
         # Row 6: Cost summary widgets
@@ -822,14 +812,14 @@ class MonitoringStack(Stack):
                                 namespace="AWS/Lambda",
                                 metric_name="Duration",
                                 statistic="Sum",
-                                period=Duration.days(1)
+                                period=Duration.days(1),
                             )
                         },
-                        label="Estimated Cost ($)"
+                        label="Estimated Cost ($)",
                     )
                 ],
                 width=8,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="API Requests (Last 24h)",
@@ -838,11 +828,11 @@ class MonitoringStack(Stack):
                         namespace="AWS/ApiGateway",
                         metric_name="Count",
                         statistic="Sum",
-                        period=Duration.days(1)
+                        period=Duration.days(1),
                     )
                 ],
                 width=8,
-                height=6
+                height=6,
             ),
             cloudwatch.SingleValueWidget(
                 title="Total Data Transfer (Last 24h, GB)",
@@ -854,13 +844,13 @@ class MonitoringStack(Stack):
                                 namespace="AWS/ApiGateway",
                                 metric_name="DataProcessed",
                                 statistic="Sum",
-                                period=Duration.days(1)
+                                period=Duration.days(1),
                             )
                         },
-                        label="Data Transfer (GB)"
+                        label="Data Transfer (GB)",
                     )
                 ],
                 width=8,
-                height=6
-            )
+                height=6,
+            ),
         )

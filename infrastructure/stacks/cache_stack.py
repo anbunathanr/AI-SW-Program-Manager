@@ -14,15 +14,11 @@ class CacheStack(Stack):
     """Stack for ElastiCache Redis caching resources."""
 
     def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        vpc: ec2.IVpc,
-        **kwargs
+        self, scope: Construct, construct_id: str, vpc: ec2.IVpc, **kwargs
     ) -> None:
         """
         Initialize cache stack.
-        
+
         Args:
             scope: CDK scope
             construct_id: Stack ID
@@ -49,14 +45,14 @@ class CacheStack(Stack):
             "RedisSecurityGroup",
             vpc=self.vpc,
             description="Security group for ElastiCache Redis",
-            allow_all_outbound=False
+            allow_all_outbound=False,
         )
 
         # Allow Redis port from within VPC
         self.redis_security_group.add_ingress_rule(
             peer=ec2.Peer.ipv4(self.vpc.vpc_cidr_block),
             connection=ec2.Port.tcp(6379),
-            description="Allow Redis access from VPC"
+            description="Allow Redis access from VPC",
         )
 
     def _create_subnet_group(self) -> None:
@@ -71,13 +67,13 @@ class CacheStack(Stack):
             "RedisSubnetGroup",
             description="Subnet group for ElastiCache Redis",
             subnet_ids=private_subnets.subnet_ids,
-            cache_subnet_group_name="ai-sw-pm-redis-subnet-group"
+            cache_subnet_group_name="ai-sw-pm-redis-subnet-group",
         )
 
     def _create_redis_cluster(self) -> None:
         """
         Create ElastiCache Redis replication group.
-        
+
         Validates: Requirements 20.3, 23.1 (caching for performance)
         """
         # Create parameter group for Redis 7.x
@@ -91,7 +87,7 @@ class CacheStack(Stack):
                 "cluster-enabled": "no",
                 # Set max memory policy to evict least recently used keys
                 "maxmemory-policy": "allkeys-lru",
-            }
+            },
         )
 
         # Create Redis replication group with automatic failover
@@ -116,15 +112,9 @@ class CacheStack(Stack):
             preferred_maintenance_window="sun:05:00-sun:07:00",  # UTC
             auto_minor_version_upgrade=True,
             tags=[
-                {
-                    "key": "Name",
-                    "value": "AI-SW-PM-Redis"
-                },
-                {
-                    "key": "Purpose",
-                    "value": "Dashboard and Report Caching"
-                }
-            ]
+                {"key": "Name", "value": "AI-SW-PM-Redis"},
+                {"key": "Purpose", "value": "Dashboard and Report Caching"},
+            ],
         )
 
         # Add dependency
@@ -132,7 +122,9 @@ class CacheStack(Stack):
         self.redis_replication_group.add_dependency(self.parameter_group)
 
         # Export Redis endpoint for Lambda functions
-        self.redis_endpoint = self.redis_replication_group.attr_primary_end_point_address
+        self.redis_endpoint = (
+            self.redis_replication_group.attr_primary_end_point_address
+        )
         self.redis_port = self.redis_replication_group.attr_primary_end_point_port
 
         CfnOutput(
@@ -140,7 +132,7 @@ class CacheStack(Stack):
             "RedisEndpoint",
             value=self.redis_endpoint,
             description="ElastiCache Redis primary endpoint",
-            export_name="RedisEndpoint"
+            export_name="RedisEndpoint",
         )
 
         CfnOutput(
@@ -148,6 +140,5 @@ class CacheStack(Stack):
             "RedisPort",
             value=self.redis_port,
             description="ElastiCache Redis port",
-            export_name="RedisPort"
+            export_name="RedisPort",
         )
-

@@ -8,11 +8,17 @@ import '@aws-amplify/ui-react/styles.css';
 
 import Dashboard from './components/Dashboard/Dashboard';
 import Login from './components/Auth/Login';
+import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
 import { awsConfig } from './config/aws-config';
 import './App.css';
 
-// Configure Amplify
-Amplify.configure(awsConfig);
+// Configure Amplify once at app startup
+try {
+  Amplify.configure(awsConfig);
+} catch (error) {
+  console.warn('AWS Amplify configuration failed:', error);
+}
 
 const theme = createTheme({
   palette: {
@@ -38,20 +44,23 @@ const theme = createTheme({
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <div className="App">
-          <Authenticator.Provider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Authenticator.Provider>
-        </div>
-      </Router>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {/* Authenticator.Provider is required for useAuthenticator hook in child components */}
+        <Authenticator.Provider>
+          <Router>
+            <div className="App">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </div>
+          </Router>
+        </Authenticator.Provider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
