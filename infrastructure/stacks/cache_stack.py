@@ -105,8 +105,7 @@ class CacheStack(Stack):
             security_group_ids=[self.redis_security_group.security_group_id],
             cache_parameter_group_name=self.parameter_group.ref,
             at_rest_encryption_enabled=True,
-            transit_encryption_enabled=True,
-            auth_token_enabled=False,  # Can enable for additional security
+            transit_encryption_enabled=True, # Can enable for additional security
             snapshot_retention_limit=5,  # Keep 5 days of backups
             snapshot_window="03:00-05:00",  # UTC
             preferred_maintenance_window="sun:05:00-sun:07:00",  # UTC

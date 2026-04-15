@@ -101,7 +101,7 @@ api_gateway_stack = ApiGatewayStack(
     f"{stack_prefix}-APIGateway",
     user_pool=auth_stack.user_pool,
     user_pool_client=auth_stack.user_pool_client,
-    authorizer_function=auth_stack.authorizer_function,
+    authorizer_function_arn=auth_stack.authorizer_function.function_arn,
     users_table=database_stack.users_table,
     integrations_table=database_stack.integrations_table,
     risks_table=database_stack.risks_table,
@@ -118,7 +118,6 @@ storage_stack.add_dependency(vpc_network_stack)
 cache_stack.add_dependency(vpc_network_stack)
 audit_logging_stack.add_dependency(monitoring_stack)
 ingestion_workflow_stack.add_dependency(database_stack)
-api_gateway_stack.add_dependency(auth_stack)
 api_gateway_stack.add_dependency(database_stack)
 api_gateway_stack.add_dependency(monitoring_stack)
 

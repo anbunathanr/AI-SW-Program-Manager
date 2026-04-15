@@ -14,8 +14,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
-from ..lambda_optimization_config import PROVISIONED_CONCURRENCY_CONFIG, MEMORY_CONFIG
-
+from lambda_optimization_config import PROVISIONED_CONCURRENCY_CONFIG, MEMORY_CONFIG
 
 class ApiGatewayStack(Stack):
     """Stack for API Gateway and Lambda function integrations."""
@@ -26,7 +25,7 @@ class ApiGatewayStack(Stack):
         construct_id: str,
         user_pool,
         user_pool_client,
-        authorizer_function,
+        authorizer_function_arn,
         users_table,
         integrations_table,
         risks_table,
@@ -41,7 +40,7 @@ class ApiGatewayStack(Stack):
         # Store references
         self.user_pool = user_pool
         self.user_pool_client = user_pool_client
-        self.authorizer_function = authorizer_function
+        self.authorizer_function_arn = authorizer_function_arn
         self.users_table = users_table
         self.integrations_table = integrations_table
         self.risks_table = risks_table
@@ -109,7 +108,6 @@ class ApiGatewayStack(Stack):
                 allow_credentials=True,
             ),
             # CloudWatch logging
-            cloud_watch_role=True,
             deploy_options=apigw.StageOptions(
                 stage_name="prod",
                 throttling_rate_limit=1000,  # Requests per second
@@ -158,18 +156,23 @@ class ApiGatewayStack(Stack):
     def _create_authorizer(self) -> None:
         """Create Lambda Authorizer for API Gateway."""
 
+        authorizer_fn = lambda_.Function.from_function_attributes(
+            self,
+            "ImportedAuthorizerFunction",
+            function_arn=self.authorizer_function_arn,
+            same_environment=True
+        )
+
         self.authorizer = apigw.RequestAuthorizer(
             self,
             "LambdaAuthorizer",
-            handler=self.authorizer_function,
+            handler=authorizer_fn,
             identity_sources=[apigw.IdentitySource.header("Authorization")],
             results_cache_ttl=Duration.minutes(5),
             authorizer_name="ai-sw-pm-authorizer",
         )
-
     def _get_lambda_config(self, function_type: str) -> dict:
-        """
-        Get optimized Lambda configuration for a function type.
+        """Get optimized Lambda configuration for a function type.
 
         Validates: Requirements 23.1, 23.2, 23.4
         """
@@ -211,8 +214,7 @@ class ApiGatewayStack(Stack):
         return layers
 
     def _create_lambda_functions(self) -> None:
-        """
-        Create Lambda functions for API endpoints with optimized settings.
+        """Create Lambda functions for API endpoints with optimized settings.
 
         Validates: Requirements 23.1, 23.2, 23.4
         """
@@ -504,38 +506,18 @@ class ApiGatewayStack(Stack):
         self.predictions_table.grant_read_data(self.dashboard_function)
 
     def _configure_provisioned_concurrency(self) -> None:
-        """
-        Configure provisioned concurrency for critical Lambda functions.
+        """Configure provisioned concurrency for critical Lambda functions."""
 
-        Reduces cold start latency for high-traffic functions.
-        Validates: Requirements 23.1, 23.6
-        """
-        # Configure provisioned concurrency for authorizer function
-        if "authorizer" in PROVISIONED_CONCURRENCY_CONFIG:
-            authorizer_alias = self.authorizer_function.current_version.add_alias(
-                "prod",
-                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG[
-                    "authorizer"
-                ],
-            )
-            # Note: API Gateway authorizer should reference the alias for provisioned concurrency benefits
-
-        # Configure provisioned concurrency for dashboard function
         if "dashboard" in PROVISIONED_CONCURRENCY_CONFIG:
-            dashboard_alias = self.dashboard_function.current_version.add_alias(
+            self.dashboard_function.current_version.add_alias(
                 "prod",
-                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG[
-                    "dashboard"
-                ],
+                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["dashboard"],
             )
 
-        # Configure provisioned concurrency for user management function
         if "user_management" in PROVISIONED_CONCURRENCY_CONFIG:
-            user_mgmt_alias = self.user_management_function.current_version.add_alias(
+            self.user_management_function.current_version.add_alias(
                 "prod",
-                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG[
-                    "user_management"
-                ],
+                provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["user_management"],
             )
 
     def _create_user_management_endpoints(self) -> None:

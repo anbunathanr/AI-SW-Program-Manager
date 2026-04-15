@@ -10,7 +10,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
-from ..lambda_optimization_config import MEMORY_CONFIG
+from lambda_optimization_config import MEMORY_CONFIG
 
 
 class AuthStack(Stack):
