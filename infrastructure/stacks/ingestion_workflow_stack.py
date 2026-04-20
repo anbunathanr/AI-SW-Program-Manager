@@ -332,12 +332,12 @@ class IngestionWorkflowStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH,
         )
 
-        # Create state machine
+        # Create state machine — use definition_body (definition param is deprecated)
         self.state_machine = sfn.StateMachine(
             self,
             "IngestionWorkflowStateMachine",
             state_machine_name="ai-sw-pm-ingestion-workflow",
-            definition=definition,
+            definition_body=sfn.DefinitionBody.from_chainable(definition),
             timeout=Duration.minutes(30),
             tracing_enabled=True,
             logs=sfn.LogOptions(

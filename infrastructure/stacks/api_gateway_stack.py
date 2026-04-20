@@ -509,13 +509,13 @@ class ApiGatewayStack(Stack):
         """Configure provisioned concurrency for critical Lambda functions."""
 
         if "dashboard" in PROVISIONED_CONCURRENCY_CONFIG:
-            self.dashboard_function.current_version.add_alias(
+            self.dashboard_function.add_alias(
                 "prod",
                 provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["dashboard"],
             )
 
         if "user_management" in PROVISIONED_CONCURRENCY_CONFIG:
-            self.user_management_function.current_version.add_alias(
+            self.user_management_function.add_alias(
                 "prod",
                 provisioned_concurrent_executions=PROVISIONED_CONCURRENCY_CONFIG["user_management"],
             )
